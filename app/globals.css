@@ -6,10 +6,10 @@ body {
 }
 
 @theme {
-  --color-canvas: #f4f8fd;
-  --color-ink: #102b55;
+  --color-canvas: #edeff3;
+  --color-ink: #0a0a0a;
   --color-accent: #005eb8;
   --color-muted: #48617e;
   --color-line: #d5e3f2;
-  --color-wash: #e5f2ff;
+  --color-wash: #d9f3ff;
 }

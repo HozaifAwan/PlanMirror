@@ -6,22 +6,25 @@ const auditSteps = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-canvas text-ink">
+    <main className="min-h-screen bg-white text-ink">
       <header className="border-b border-line bg-white">
         <div className="mx-auto max-w-6xl px-6 py-5 text-lg font-bold tracking-tight">PlanMirror</div>
       </header>
       <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-        <section className="rounded-3xl border border-line bg-linear-to-br from-white to-wash p-7 sm:p-12">
-          <p className="text-sm font-semibold text-accent">Subscription audit workspace</p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight sm:text-6xl">
+        <section className="px-2 py-8 text-center sm:py-14">
+          <p className="inline-block rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink">Subscription audit workspace</p>
+          <h1 className="mx-auto mt-6 max-w-3xl text-balance text-4xl font-extrabold tracking-tight sm:text-6xl">
             See if your billing matches your promise.
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-muted">
+          <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
             Compare the terms on your pricing page with the billing plan configured in PayPal.
           </p>
+          <a href="#workflow" className="mt-7 inline-flex rounded-full bg-ink px-7 py-3 font-semibold text-white hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+            Explore the workflow
+          </a>
         </section>
         {/* Crystalline owns the audit screens. Coordinate the findings slot with Sebastian. */}
-        <section className="mt-10" aria-labelledby="workflow">
+        <section className="mt-8 rounded-3xl bg-wash p-6 sm:p-10" aria-labelledby="workflow">
           <h2 id="workflow" className="text-xl font-semibold">Audit workflow</h2>
           <ol className="mt-4 grid gap-4 md:grid-cols-3">
             {auditSteps.map(({ title, detail }, index) => (
