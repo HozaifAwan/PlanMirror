@@ -1,3 +1,4 @@
+// Ayaan (PayPal API & Backend): Normalize sandbox plan responses to these types for Nilanee.
 import type { BillingInterval, Money } from "../audit/types";
 
 /** Normalized values for the initial fixed-price plan audit. */

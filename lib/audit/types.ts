@@ -1,3 +1,4 @@
+// Shared contract: Sujeeth supplies claims, Nilanee produces findings, and Sebastian displays them. Coordinate changes with Hozaif.
 /** Preserve decimal amounts as text across JSON and API boundaries. */
 export interface Money {
   value: string;

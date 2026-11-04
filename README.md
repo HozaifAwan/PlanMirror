@@ -10,15 +10,15 @@ Branch from `main` for your work and target `main` with your pull request. Run `
 
 ## Team roles
 
-| Role | Owns |
-| --- | --- |
-| Project Lead & System Architect | Architecture, shared contracts, branch coordination, and integration |
-| PayPal API & Backend | Sandbox OAuth, plan retrieval, and server routes |
-| AI/LLM | Evidence extraction, schemas, prompts, and grounded explanations |
-| Business Logic & QA | Deterministic comparisons, normalization, and automated tests |
-| Frontend/UI | Quillfox pricing page, PlanMirror interface, and responsive styling |
-| AG Studio & Agent | Evidence dashboard, Mirror widget, and Auditor agent |
-| DevOps, Security & Demo | Deployment, secrets, endpoint security, integration testing, and submission |
+| Teammate | Role | Start here | Coordinate with |
+| --- | --- | --- | --- |
+| Hozaif | Project Lead & System Architect | Shared contracts in `lib/audit/types.ts` and `lib/paypal/types.ts`, integration, and PRs | Everyone on contract changes |
+| Ayaan | PayPal API & Backend | `lib/paypal/types.ts`, then add the sandbox client under `lib/paypal/` and routes under `app/api/paypal/` | Nilanee on normalized plans and Leen on endpoint security |
+| Sujeeth | AI/LLM | `lib/audit/types.ts`, then add extraction and evidence validation under `lib/ai/` | Nilanee on claim shapes and Sebastian on evidence for the agent |
+| Nilanee | Business Logic & QA | `lib/audit/types.ts`, then add comparisons and tests under `lib/audit/` | Ayaan and Sujeeth on inputs and Sebastian on findings |
+| Crystalline | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
+| Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Crystalline on layout, Nilanee on findings, and Sujeeth on source evidence |
+| Leen | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
 
 The starter provides a placeholder page, shared TypeScript types, environment placeholders, and CI. Coordinate changes to shared types with the project lead.
 
