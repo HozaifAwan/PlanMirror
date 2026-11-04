@@ -7,13 +7,13 @@ import { useMemo } from "react";
 import type { AuditState } from "./audit-action";
 
 const evidenceTheme = studioTheme.withParams({
-  backgroundColor: "#fff3dc",
-  textColor: "#2c1b35",
-  studioCanvasBackgroundColor: "#eddfed",
-  studioWidgetBackgroundColor: "#fff3dc",
-  gridHeaderBackgroundColor: "#eddfed",
-  gridDataBackgroundColor: "#fff3dc",
-  gridOddRowBackgroundColor: "#fbebd7",
+  backgroundColor: "#fffdf9",
+  textColor: "#172c31",
+  studioCanvasBackgroundColor: "#e1eceb",
+  studioWidgetBackgroundColor: "#fffdf9",
+  gridHeaderBackgroundColor: "#e1eceb",
+  gridDataBackgroundColor: "#fffdf9",
+  gridOddRowBackgroundColor: "#f1f6f4",
 });
 
 const initialState: ComponentProps<typeof AgStudio>["initialState"] = {
@@ -25,7 +25,7 @@ const initialState: ComponentProps<typeof AgStudio>["initialState"] = {
     widgets: {
       evidence: {
         type: "grid",
-        dataMapping: { cols: ["field", "status", "advertised", "configured", "planId", "paypalField"].map(id => ({ id })) },
+        dataMapping: { cols: ["field", "status", "advertised", "configured", "planId", "paypalField"].map(id => ({ id: `auditFindings.${id}` })) },
         format: { title: { text: "Subscription evidence", enabled: true }, style: { columnAutoSize: true } },
       },
     },
@@ -34,7 +34,7 @@ const initialState: ComponentProps<typeof AgStudio>["initialState"] = {
 
 export default function Studio({ rows }: { rows: NonNullable<AuditState["rows"]> }) {
   const data = useMemo(() => ({ sources: [{ id: "auditFindings", data: rows }] }), [rows]);
-  return <div className="h-[620px] overflow-auto rounded-xl border border-heather bg-ivory text-ink">
+  return <div className="h-[620px] overflow-auto rounded-xl border border-line bg-paper text-ink">
     <AgStudio data={data} initialState={initialState} theme={evidenceTheme} mode="edit" />
   </div>;
 }

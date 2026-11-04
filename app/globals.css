@@ -5,12 +5,13 @@ body {
 }
 
 @theme {
-  --color-ink: #1d1224;
-  --color-plum: #2c1b35;
-  --color-mulberry: #45304f;
-  --color-heather: #795c83;
-  --color-ivory: #fff3dc;
-  --color-mist: #ddc9df;
-  --color-lichen: #daf789;
-  --color-apricot: #ffbc92;
+  --color-canvas: #f3f0e8;
+  --color-paper: #fffdf9;
+  --color-ink: #172c31;
+  --color-muted: #485d60;
+  --color-line: #b6c4be;
+  --color-wash: #e1eceb;
+  --color-accent: #125760;
+  --color-success: #246143;
+  --color-warning: #99431f;
 }

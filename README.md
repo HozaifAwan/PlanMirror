@@ -4,7 +4,7 @@
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Status: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The demo uses the known Quillfox offer fields. General webpage extraction and the AI Auditor agent are planned.
+> **Status: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The sandbox audit can extract terms from the Quillfox pricing copy with OpenAI. General webpage extraction and the AI Auditor agent are planned.
 
 ## Project overview
 
@@ -119,7 +119,7 @@ The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server share
 2. Run the mismatch demo. It compares the offer with a labeled sample plan that has a seven-day trial and a $19.99 monthly price.
 3. Rerun with the corrected sample to see both checks match.
 4. Inspect the editable AG Studio evidence grid under **Audit findings**. Use the toggle to collapse it.
-5. To use actual PayPal data, open **Audit a live PayPal sandbox plan** and supply a sandbox plan ID and your local audit token. Select a plan intended to implement the Quillfox offer. An error is shown separately and never presented as live data.
+5. To use actual PayPal data, open **Audit a live PayPal sandbox plan** and supply a sandbox plan ID and your local audit token. Select a plan intended to implement the Quillfox offer. With **Extract Quillfox’s advertised terms with AI** enabled, set `OPENAI_API_KEY` in `.env.local` and restart the server. The audit checks the structured model response against the published Quillfox copy before comparing it to PayPal. Uncheck AI extraction to use the known Quillfox terms. An error is shown separately and never presented as live data.
 
 The comparison supports one free trial expressed in days and one fixed monthly renewal in USD. Unsupported cycles or pricing conditions require review. The sample rerun changes only the demo data.
 

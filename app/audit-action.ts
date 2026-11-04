@@ -1,13 +1,15 @@
 "use server";
 
 import { timingSafeEqual } from "node:crypto";
-import { auditQuillfox, samplePlan } from "../lib/audit/quillfox";
+import { auditQuillfox, offer, samplePlan } from "../lib/audit/quillfox";
+import { extractOffer, OfferExtractionError } from "../lib/ai/extract-offer";
 import { PayPalSandboxError, planIdSchema, readSandboxPlan } from "../lib/paypal/sandbox";
 
 export type AuditState = {
   source?: "fixture" | "paypal_sandbox";
   rows?: ReturnType<typeof auditQuillfox>;
   retrievedAt?: string;
+  extractedQuote?: string;
   error?: string;
 };
 
@@ -33,8 +35,17 @@ export async function runAudit(_previous: AuditState, data: FormData): Promise<A
 
   try {
     const plan = await readSandboxPlan(id.data);
-    return { source: "paypal_sandbox", rows: auditQuillfox(plan), retrievedAt: plan.retrievedAt };
+    if (data.get("extract") !== "on") {
+      return { source: "paypal_sandbox", rows: auditQuillfox(plan), retrievedAt: plan.retrievedAt };
+    }
+    const claim = await extractOffer(offer.quote);
+    return {
+      source: "paypal_sandbox",
+      rows: auditQuillfox(plan, claim),
+      retrievedAt: plan.retrievedAt,
+      extractedQuote: claim.quote,
+    };
   } catch (error) {
-    return { error: error instanceof PayPalSandboxError ? error.message : "The sandbox plan could not be processed." };
+    return { error: error instanceof PayPalSandboxError || error instanceof OfferExtractionError ? error.message : "The audit could not validate the provider response." };
   }
 }
