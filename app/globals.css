@@ -4,3 +4,12 @@
 body {
   font-family: system-ui, sans-serif;
 }
+
+@theme {
+  --color-canvas: #f4f8fd;
+  --color-ink: #102b55;
+  --color-accent: #005eb8;
+  --color-muted: #48617e;
+  --color-line: #d5e3f2;
+  --color-wash: #e5f2ff;
+}
