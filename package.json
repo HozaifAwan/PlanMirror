@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "ag-studio-react": "^3.0.0",
     "decimal.js": "^10.6.0",
     "next": "^16.4.5",
     "react": "^19.3.1",

@@ -14,7 +14,7 @@ const planSchema = z.object({
   name: z.string().min(1),
   status: z.string().min(1),
   quantity_supported: z.boolean().optional(),
-  taxes: z.object({ percentage: z.string(), inclusive: z.boolean() }).optional(),
+  taxes: z.object({ percentage: z.string().regex(/^\d+(\.\d+)?$/), inclusive: z.boolean() }).optional(),
   payment_preferences: z.object({ setup_fee: money.optional() }).optional(),
   billing_cycles: z.array(z.object({
     sequence: z.number().int().positive(),

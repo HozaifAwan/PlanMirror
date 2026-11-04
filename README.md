@@ -4,7 +4,7 @@
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Status: application foundation.** The Next.js shell, shared domain types, and local tooling are available. A protected sandbox endpoint can retrieve a single PayPal plan. AI extraction, comparison, and AG Studio are planned.
+> **Status: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The demo uses the known Quillfox offer fields. General webpage extraction and the AI Auditor agent are planned.
 
 ## Project overview
 
@@ -112,6 +112,16 @@ References: [Subscriptions API](https://developer.paypal.com/api/subscriptions/v
 For local development, configure `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` for the sandbox merchant that owns the plan. Set `PLANMIRROR_SANDBOX_READ_TOKEN` to a random secret of at least 32 characters in `.env.local`. The endpoint is disabled without that token. Use an HTTP client to send `GET /api/paypal/plans/P-...` with the token in the Authorization Bearer header. Keep the token out of frontend code and leave the endpoint disabled on public demo deployments.
 
 The endpoint uses PayPal's sandbox OAuth and plan details APIs. The response contains normalized billing cycles, decimal price strings, and retrieval time. Missing fixed prices, tiered pricing, taxes, and quantity-dependent terms require explicit handling by the comparison engine. An OAuth or plan retrieval error produces an error response rather than sample billing data.
+
+### Run the Quillfox demo
+
+1. Open the home page and follow **View Quillfox pricing page** to see the advertised offer.
+2. Run the mismatch demo. It compares the offer with a labeled sample plan that has a seven-day trial and a $19.99 monthly price.
+3. Rerun with the corrected sample to see both checks match.
+4. Select **Explore findings in AG Studio** to open the editable evidence report.
+5. To use actual PayPal data, open **Audit a live PayPal sandbox plan** and supply a sandbox plan ID and your local audit token. Select a plan intended to implement the Quillfox offer. An error is shown separately and never presented as live data.
+
+The comparison supports one free trial expressed in days and one fixed monthly renewal in USD. Unsupported cycles or pricing conditions require review. The sample rerun changes only the demo data.
 
 ### AG Studio demo acceptance
 
