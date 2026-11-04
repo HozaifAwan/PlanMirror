@@ -3,3 +3,14 @@
 body {
   font-family: system-ui, sans-serif;
 }
+
+@theme {
+  --color-ink: #1d1224;
+  --color-plum: #2c1b35;
+  --color-mulberry: #45304f;
+  --color-heather: #795c83;
+  --color-ivory: #fff3dc;
+  --color-mist: #ddc9df;
+  --color-lichen: #daf789;
+  --color-apricot: #ffbc92;
+}

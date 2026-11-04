@@ -37,14 +37,20 @@ export class PayPalSandboxError extends Error {
   }
 }
 
-export async function readSandboxPlan(id: string): Promise<PayPalBillingPlan> {
-  const planId = planIdSchema.parse(id);
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new PayPalSandboxError(503, "PayPal sandbox credentials are missing.");
-  }
+const tokenSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number().int().positive(),
+});
 
+type SandboxToken = { value: string; expiresAt: number };
+let session: {
+  clientId: string;
+  clientSecret: string;
+  token: Promise<SandboxToken>;
+} | undefined;
+
+async function requestToken(clientId: string, clientSecret: string): Promise<SandboxToken> {
+  const requestedAt = Date.now();
   const tokenResponse = await fetch(origin + "/v1/oauth2/token", {
     method: "POST",
     headers: {
@@ -59,14 +65,53 @@ export async function readSandboxPlan(id: string): Promise<PayPalBillingPlan> {
   if (!tokenResponse.ok) {
     throw new PayPalSandboxError(502, "PayPal sandbox authentication failed.");
   }
-  const { access_token: token } = z.object({ access_token: z.string().min(1) }).parse(await tokenResponse.json());
+  const token = tokenSchema.parse(await tokenResponse.json());
+  return { value: token.access_token, expiresAt: requestedAt + token.expires_in * 1000 - Math.min(30_000, token.expires_in * 100) };
+}
 
-  const response = await fetch(origin + "/v1/billing/plans/" + planId, {
-    headers: { Authorization: "Bearer " + token },
+async function getToken(): Promise<SandboxToken> {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new PayPalSandboxError(503, "PayPal sandbox credentials are missing.");
+  }
+
+  const current = session;
+  if (current?.clientId === clientId && current.clientSecret === clientSecret) {
+    const token = await current.token;
+    if (token.expiresAt > Date.now()) return token;
+    if (session === current) session = undefined;
+    return getToken();
+  }
+
+  const token = requestToken(clientId, clientSecret);
+  session = { clientId, clientSecret, token };
+  try {
+    return await token;
+  } catch (error) {
+    if (session?.token === token) session = undefined;
+    throw error;
+  }
+}
+
+function fetchPlan(planId: string, token: SandboxToken) {
+  return fetch(origin + "/v1/billing/plans/" + planId, {
+    headers: { Authorization: "Bearer " + token.value },
     cache: "no-store",
     redirect: "error",
     signal: AbortSignal.timeout(8000),
   });
+}
+
+export async function readSandboxPlan(id: string): Promise<PayPalBillingPlan> {
+  const planId = planIdSchema.parse(id);
+  const token = await getToken();
+  let response = await fetchPlan(planId, token);
+  if (response.status === 401) {
+    const current = session;
+    if (current && await current.token.catch(() => undefined) === token && session === current) session = undefined;
+    response = await fetchPlan(planId, await getToken());
+  }
   if (response.status === 404) {
     throw new PayPalSandboxError(404, "Plan was not found in the PayPal sandbox.");
   }

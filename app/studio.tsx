@@ -1,9 +1,20 @@
 "use client";
 
 import type { ComponentProps } from "react";
+import { studioTheme } from "ag-studio";
 import { AgStudio } from "ag-studio-react";
 import { useMemo } from "react";
 import type { AuditState } from "./audit-action";
+
+const evidenceTheme = studioTheme.withParams({
+  backgroundColor: "#fff3dc",
+  textColor: "#2c1b35",
+  studioCanvasBackgroundColor: "#eddfed",
+  studioWidgetBackgroundColor: "#fff3dc",
+  gridHeaderBackgroundColor: "#eddfed",
+  gridDataBackgroundColor: "#fff3dc",
+  gridOddRowBackgroundColor: "#fbebd7",
+});
 
 const initialState: ComponentProps<typeof AgStudio>["initialState"] = {
   selectedPageId: "findings",
@@ -23,7 +34,7 @@ const initialState: ComponentProps<typeof AgStudio>["initialState"] = {
 
 export default function Studio({ rows }: { rows: NonNullable<AuditState["rows"]> }) {
   const data = useMemo(() => ({ sources: [{ id: "auditFindings", data: rows }] }), [rows]);
-  return <div className="h-[560px] overflow-hidden rounded-xl bg-white text-slate-900">
-    <AgStudio data={data} initialState={initialState} mode="edit" />
+  return <div className="h-[620px] overflow-auto rounded-xl border border-heather bg-ivory text-ink">
+    <AgStudio data={data} initialState={initialState} theme={evidenceTheme} mode="edit" />
   </div>;
 }
