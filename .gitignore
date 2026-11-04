@@ -218,3 +218,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Next.js and local credentials
+/node_modules/
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+.env*
+!.env.example
+
+# Shared TypeScript domain modules (the Python template ignores lib)
+!/lib/

@@ -4,7 +4,7 @@
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Status: planning / documentation only.** The repository currently contains this README and a Python-template `.gitignore`. No application, dependency manifest, environment example, tests, or deployment exists yet. Every application capability below is planned, not implemented. The chosen architecture uses TypeScript; the existing Python ignore template does not imply a Python backend.
+> **Status: application foundation.** The Next.js shell, shared domain types, and local tooling are available. Billing retrieval, AI extraction, comparison, and AG Studio features are planned.
 
 ## Project overview
 
@@ -29,7 +29,7 @@ The planned workflow:
 
 AI interprets wording; deterministic code verifies financial comparisons. Missing evidence or ambiguous plan mapping must produce **needs review**, not an invented match.
 
-## Tech stack — finalized architecture, implementation pending
+## Tech stack — foundation and planned integrations
 
 | Technology | Planned responsibility |
 | --- | --- |
@@ -45,7 +45,7 @@ AI interprets wording; deterministic code verifies financial comparisons. Missin
 | Playwright | Optional fallback only when JavaScript rendering is required |
 | Vercel | Planned hosting; no deployment yet |
 
-There is **no separate Express, FastAPI, or Python backend**. PayPal and OpenAI calls belong in server-side Next.js code. Package versions and scripts will be documented after initialization.
+There is **no separate Express, FastAPI, or Python backend**. PayPal and OpenAI calls belong in server-side Next.js code. Installed versions are recorded in the npm lockfile.
 
 ## System architecture — planned
 
@@ -67,7 +67,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 
 ## Core features and build status
 
-**Implemented:** repository initialization and project documentation only.
+**Implemented:** Next.js App Router shell, Tailwind styling, shared TypeScript contracts, and local development checks.
 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
@@ -109,44 +109,35 @@ References: [Subscriptions API](https://developer.paypal.com/api/subscriptions/v
 
 ## Local development
 
-### Available now
-
-With Git installed and repository access granted:
+Use Node.js 20.9 or later and npm. From the repository checkout:
 
 ```bash
-git clone https://github.com/HozaifAwan/hackathon-project.git
-cd hackathon-project
+npm ci
+npm run dev
 ```
 
-The repository is currently private; use your own GitHub authentication. Do not put tokens in the clone URL.
+Open [localhost:3000](http://localhost:3000). The landing page runs without credentials.
+When working on integrations, copy `.env.example` to the Git-ignored `.env.local`.
+Use sandbox PayPal credentials and keep the OpenAI key server-side.
 
-### Pending application initialization
-
-There is no `package.json`, lockfile, application directory, or runnable app yet. Dependency-install and start commands are therefore **pending**; do not assume `npm install` or `npm run dev` works in this repository.
-
-The foundation work will initialize Next.js App Router with React, TypeScript, and Tailwind, add the listed dependencies, establish server-side integrations, and then document the actual package manager, runtime requirements, install/build/test/start scripts, and local URL.
-
-An `.env.example` is **planned but does not exist**. Its variable names will be chosen and documented alongside the implementation; none are defined here as existing configuration. It must contain variable names and empty placeholders only, never credentials. Intended configuration covers PayPal sandbox authentication, OpenAI server authentication/model selection, and AG Studio licensing as required by its documentation. Local values will stay in an ignored environment file, with hosted secrets configured separately.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
 ## Project structure
 
-Current root contents:
+| Path | Purpose |
+| --- | --- |
+| `app/layout.tsx` | Root layout, metadata, and global styles |
+| `app/page.tsx` | Foundation landing page |
+| `app/globals.css` | Tailwind entry point |
+| `lib/paypal/types.ts` | Normalized PayPal plans and billing cycles |
+| `lib/audit/types.ts` | Money, intervals, advertised claims, findings, and evidence |
+| `.env.example` | Empty server-side environment variable placeholders |
 
-```text
-.gitignore    # Existing Python template; review for Next.js during foundation work
-README.md     # Project plan and contributor guide
-```
-
-Proposed structure — **not created yet**:
-
-```text
-app/          # App Router pages and server-side API routes
-components/   # Audit interface and AG Studio integration
-lib/          # PayPal retrieval, extraction, schemas, normalization, comparisons
-tests/        # Deterministic comparison and integration coverage
-public/       # Approved static assets
-.env.example  # Names and empty placeholders only
-```
+The contracts preserve decimal amounts as strings and distinguish a quoted rate from the actual billing interval. Findings can require review when evidence is incomplete. Add runtime schemas and integration dependencies alongside the features that use them.
 
 ## Team collaboration
 
