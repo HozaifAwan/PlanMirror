@@ -1,23 +1,21 @@
-import Link from "next/link";
-import AuditConsole from "./audit-console";
-import { auditQuillfox, offer, samplePlan } from "../lib/audit/quillfox";
-
 export default function Home() {
   return (
-    <main className="min-h-screen bg-canvas bg-linear-to-b from-wash to-canvas to-96 px-5 py-12 text-ink sm:px-10">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-9 border-b border-line pb-8">
-          <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">PlanMirror</h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted">Find discrepancies between what a merchant promises and what PayPal is configured to charge.</p>
-        </header>
-        <section className="mb-7 rounded-2xl border border-line bg-paper p-5 sm:p-7">
-          <p className="text-sm font-semibold text-accent">Advertised offer</p>
-          <h2 className="mt-2 text-2xl font-semibold">{offer.name}</h2>
-          <blockquote className="mt-2 text-muted">“{offer.quote}”</blockquote>
-          <Link href="/quillfox" className="mt-3 inline-block text-sm text-accent underline">View Quillfox pricing page</Link>
-        </section>
-        <AuditConsole initial={{ source: "fixture", offerQuote: offer.quote, rows: auditQuillfox(samplePlan(false)) }} />
-      </div>
+    <main className="flex min-h-screen items-center bg-slate-950 px-6 py-16 text-slate-50">
+      <section className="mx-auto w-full max-w-3xl">
+        <p className="text-sm font-semibold tracking-widest text-teal-300 uppercase">
+          PayPal AI Hackathon 2026
+        </p>
+        <h1 className="mt-4 text-5xl font-bold tracking-tight sm:text-7xl">
+          PlanMirror
+        </h1>
+        <p className="mt-6 max-w-2xl text-xl leading-relaxed text-slate-300">
+          Compare the subscription terms your website advertises with the
+          billing plans configured in PayPal.
+        </p>
+        <p className="mt-8 border-l-2 border-teal-400 pl-4 text-sm text-slate-300">
+          Foundation preview. Auditing and the findings dashboard are in development.
+        </p>
+      </section>
     </main>
   );
 }

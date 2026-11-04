@@ -4,7 +4,7 @@
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Status: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The sandbox audit can extract terms from the Quillfox pricing copy with OpenAI. General webpage extraction and the AI Auditor agent are planned.
+> **Status: application foundation.** The Next.js shell, shared domain types, and local tooling are available. Billing retrieval, AI extraction, comparison, and AG Studio features are planned.
 
 ## Project overview
 
@@ -72,7 +72,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
+| PayPal sandbox retrieval | Retrieve real plan details with pagination | Planned |
 | Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
@@ -106,28 +106,6 @@ Annual equivalence does **not** mean monthly collection equals annual collection
 Authenticate server-side using OAuth client credentials against the PayPal sandbox. Keep client secrets and access tokens on the server; never place them in client bundles, screenshots, logs, or commits. The initial product is read-only: auditing does not create subscriptions, charge customers, or modify prices.
 
 References: [Subscriptions API](https://developer.paypal.com/api/subscriptions/v1) · [List plans and response preferences](https://developer.paypal.com/api/subscriptions/v1/plans-list/) · [PayPal developer dashboard](https://developer.paypal.com/dashboard/)
-
-### Sandbox plan endpoint
-
-For local development, configure `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` for the sandbox merchant that owns the plan. Set `PLANMIRROR_SANDBOX_READ_TOKEN` to a random secret of at least 32 characters in `.env.local`. The endpoint is disabled without that token. Use an HTTP client to send `GET /api/paypal/plans/P-...` with the token in the Authorization Bearer header. Keep the token out of frontend code and leave the endpoint disabled on public demo deployments.
-
-The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server shares an OAuth token between concurrent reads, refreshes it before expiry, and retries a rejected token once. Plan details are fetched fresh for every audit. The response contains normalized billing cycles, decimal price strings, and retrieval time. Missing fixed prices, tiered pricing, taxes, and quantity-dependent terms require explicit handling by the comparison engine. An OAuth or plan retrieval error produces an error response rather than sample billing data.
-
-### Run the Quillfox demo
-
-1. Open the home page and follow **View Quillfox pricing page** to see the advertised offer.
-2. Run the mismatch demo. It compares the offer with a labeled sample plan that has a seven-day trial and a $19.99 monthly price.
-3. Rerun with the corrected sample to see both checks match.
-4. Inspect the editable AG Studio evidence grid under **Audit findings**. Use the toggle to collapse it.
-5. To use actual PayPal data, open **Audit a live PayPal sandbox plan** and supply a sandbox plan ID and your local audit token. Select a plan intended to implement the Quillfox offer. With **Extract Quillfox’s advertised terms with AI** enabled, set `OPENAI_API_KEY` in `.env.local` and restart the server. The audit checks the structured model response against the published Quillfox copy before comparing it to PayPal. Uncheck AI extraction to use the known Quillfox terms. An error is shown separately and never presented as live data.
-
-The comparison supports one free trial expressed in days and one fixed monthly renewal in USD. Unsupported cycles or pricing conditions require review. The sample rerun changes only the demo data.
-
-### AG Studio demo acceptance
-
-The Quillfox demo should use a real PayPal sandbox plan ID and show the source URL, quoted website terms, and PayPal field behind each finding. The comparison engine decides match, mismatch, or needs review. The planned AG Studio dashboard will expose these findings through a custom evidence widget, cross-filterable views, and a themed layout. The Auditor agent should use the Studio Agent Framework to answer questions from those same records. The demo should show the mismatch clearing after the public offer or sandbox configuration is corrected and the audit is rerun.
-
-See [Devpost's AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid).
 
 ## Local development
 
@@ -253,10 +231,3 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 - [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses)
 - [Zod](https://zod.dev/) · [Decimal.js](https://mikemcl.github.io/decimal.js/) · [Cheerio](https://cheerio.js.org/)
 - [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/)
-
-## Additions by Hozaif
-
-- **Portable audit evidence.** Use **Download evidence report** to save a JSON record for a teammate investigating an offer. It includes the Quillfox source link and quote, whether OpenAI extracted the terms, the sample or sandbox source label, the PayPal retrieval timestamp for sandbox audits, and every finding with its plan ID and PayPal field. The download includes all findings even when the dashboard is filtered. API keys and audit tokens are excluded.
-- **Polished demo dashboard.** The audit and AG Studio share a blue palette, and the audit opens with the evidence grid visible. The status controls let judges isolate discrepancies before downloading the complete record.
-- **Two-minute recording sequence.** Spend 20 seconds showing Quillfox’s public-facing promise, 45 seconds running an authorized sandbox audit with AI extraction and showing the verified quote, 35 seconds inspecting a discrepancy and downloading its evidence, and 20 seconds running the labeled corrected sample. The corrected sample demonstrates the expected outcome using fixture data. Record the sandbox run with the token field masked and keep the final video under three minutes. [Devpost official rules](https://paypalaihackathon.devpost.com/rules)
-- **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)

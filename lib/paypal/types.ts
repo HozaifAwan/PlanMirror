@@ -9,8 +9,6 @@ export interface PayPalBillingPlan {
   retrievedAt: string;
   billingCycles: PayPalBillingCycle[];
   setupFee?: Money;
-  quantitySupported?: boolean;
-  taxes?: { percentage: string; inclusive: boolean };
 }
 
 export interface PayPalBillingCycle {
@@ -20,5 +18,4 @@ export interface PayPalBillingCycle {
   /** PayPal uses zero for an unlimited number of regular cycles. */
   totalCycles: number;
   fixedPrice?: Money;
-  pricingModel?: string;
 }
