@@ -7,13 +7,13 @@ import { useMemo } from "react";
 import type { AuditState } from "./audit-action";
 
 const evidenceTheme = studioTheme.withParams({
-  backgroundColor: "#fffdf9",
-  textColor: "#172c31",
-  studioCanvasBackgroundColor: "#e1eceb",
-  studioWidgetBackgroundColor: "#fffdf9",
-  gridHeaderBackgroundColor: "#e1eceb",
-  gridDataBackgroundColor: "#fffdf9",
-  gridOddRowBackgroundColor: "#f1f6f4",
+  backgroundColor: "#ffffff",
+  textColor: "#003087",
+  studioCanvasBackgroundColor: "#d9f0ff",
+  studioWidgetBackgroundColor: "#ffffff",
+  gridHeaderBackgroundColor: "#d9f0ff",
+  gridDataBackgroundColor: "#ffffff",
+  gridOddRowBackgroundColor: "#f3f8fe",
 });
 
 const initialState: ComponentProps<typeof AgStudio>["initialState"] = {

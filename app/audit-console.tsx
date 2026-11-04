@@ -9,7 +9,7 @@ const Studio = dynamic(() => import("./studio"), {
   loading: () => <p role="status">Loading AG Studio…</p>,
 });
 
-export default function AuditConsole({ initial }: { initial: AuditState }) {
+export default function AuditConsole({ initial }: { initial: AuditState & { offerQuote: string } }) {
   const [state, audit, pending] = useActionState(runAudit, initial);
   const [showStudio, setShowStudio] = useState(true);
   const [statusFilter, setStatusFilter] = useState("All findings");
@@ -17,6 +17,27 @@ export default function AuditConsole({ initial }: { initial: AuditState }) {
   const rows = result.rows ?? [];
   const filters = ["All findings", "Mismatch", "Needs review", "Match"];
   const visibleRows = statusFilter === "All findings" ? rows : rows.filter(row => row.status === statusFilter);
+  function downloadEvidence() {
+    const report = {
+      version: 1,
+      source: result.source,
+      advertisedOffer: {
+        url: new URL("/quillfox", window.location.href).href,
+        quote: result.extractedQuote ?? initial.offerQuote,
+        extraction: result.extractedQuote ? "openai" : "known_offer",
+      },
+      ...(result.retrievedAt && { paypalRetrievedAt: result.retrievedAt }),
+      findings: rows,
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const download = document.createElement("a");
+    download.href = url;
+    download.download = result.source === "paypal_sandbox" ? "planmirror-sandbox-evidence.json" : "planmirror-sample-evidence.json";
+    download.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   return (
     <div className="space-y-7">
       <form action={audit} className="space-y-4">
@@ -44,6 +65,10 @@ export default function AuditConsole({ initial }: { initial: AuditState }) {
           <h2 className="text-xl font-semibold">Audit findings</h2>
           <span className="rounded-full bg-wash px-3 py-1 text-sm text-accent">{result.source === "paypal_sandbox" ? "Live PayPal sandbox" : "Sample data"}</span>
         </div>
+        <button type="button" onClick={downloadEvidence} disabled={pending || Boolean(state.error) || !rows.length}
+          className="mt-4 rounded-lg border border-line px-3 py-2 text-sm font-semibold text-accent disabled:opacity-50">
+          Download evidence report
+        </button>
         {result.extractedQuote && <p className="mt-2 text-sm text-muted">AI-extracted evidence from Quillfox pricing: “{result.extractedQuote}”</p>}
         {result.retrievedAt && <p className="mt-2 text-sm text-muted">Retrieved {result.retrievedAt}</p>}
         <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="Filter audit findings">
