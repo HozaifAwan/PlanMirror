@@ -4,7 +4,7 @@
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Status: application foundation.** The Next.js shell, shared domain types, and local tooling are available. Billing retrieval, AI extraction, comparison, and AG Studio features are planned.
+> **Status: application foundation.** The Next.js shell, shared domain types, and local tooling are available. A protected sandbox endpoint can retrieve a single PayPal plan. AI extraction, comparison, and AG Studio are planned.
 
 ## Project overview
 
@@ -72,7 +72,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve real plan details with pagination | Planned |
+| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
 | Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
@@ -106,6 +106,18 @@ Annual equivalence does **not** mean monthly collection equals annual collection
 Authenticate server-side using OAuth client credentials against the PayPal sandbox. Keep client secrets and access tokens on the server; never place them in client bundles, screenshots, logs, or commits. The initial product is read-only: auditing does not create subscriptions, charge customers, or modify prices.
 
 References: [Subscriptions API](https://developer.paypal.com/api/subscriptions/v1) · [List plans and response preferences](https://developer.paypal.com/api/subscriptions/v1/plans-list/) · [PayPal developer dashboard](https://developer.paypal.com/dashboard/)
+
+### Sandbox plan endpoint
+
+For local development, configure `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` for the sandbox merchant that owns the plan. Set `PLANMIRROR_SANDBOX_READ_TOKEN` to a random secret of at least 32 characters in `.env.local`. The endpoint is disabled without that token. Use an HTTP client to send `GET /api/paypal/plans/P-...` with the token in the Authorization Bearer header. Keep the token out of frontend code and leave the endpoint disabled on public demo deployments.
+
+The endpoint uses PayPal's sandbox OAuth and plan details APIs. The response contains normalized billing cycles, decimal price strings, and retrieval time. Missing fixed prices, tiered pricing, taxes, and quantity-dependent terms require explicit handling by the comparison engine. An OAuth or plan retrieval error produces an error response rather than sample billing data.
+
+### AG Studio demo acceptance
+
+The Quillfox demo should use a real PayPal sandbox plan ID and show the source URL, quoted website terms, and PayPal field behind each finding. The comparison engine decides match, mismatch, or needs review. The planned AG Studio dashboard will expose these findings through a custom evidence widget, cross-filterable views, and a themed layout. The Auditor agent should use the Studio Agent Framework to answer questions from those same records. The demo should show the mismatch clearing after the public offer or sandbox configuration is corrected and the audit is rerun.
+
+See [Devpost's AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid).
 
 ## Local development
 
