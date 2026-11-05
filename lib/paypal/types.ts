@@ -10,6 +10,10 @@ export interface PayPalBillingPlan {
   retrievedAt: string;
   billingCycles: PayPalBillingCycle[];
   setupFee?: Money;
+  quantitySupported?: boolean;
+  taxes?: { percentage: string; inclusive: boolean };
+  /** Exact upstream plan fields, retained for evidence and unsupported pricing review. */
+  source?: Record<string, unknown>;
 }
 
 export interface PayPalBillingCycle {
@@ -19,4 +23,5 @@ export interface PayPalBillingCycle {
   /** PayPal uses zero for an unlimited number of regular cycles. */
   totalCycles: number;
   fixedPrice?: Money;
+  pricingModel?: string;
 }
