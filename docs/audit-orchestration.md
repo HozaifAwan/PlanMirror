@@ -36,7 +36,7 @@ A completed run can contain mismatches. Completed means every requested comparis
 
 Implement an adapter with the signature `() => Promise<PayPalBillingPlan | undefined>`. Return the normalized plan from the authorized sandbox merchant. Return undefined for an explicitly absent plan and throw for retrieval/authentication/normalization failures. Use ISO UTC retrieval timestamps. Preserve decimal amounts as text.
 
-The current shared type supports fixed prices and optional setup fees. Resolve taxes, quantities, tiered pricing, and subscription overrides with Hozaif and Nilanee before returning those plans. The orchestration plan schema rejects unexpected fields rather than discarding additional billing context.
+The current shared type supports fixed prices and optional setup fees. Resolve taxes, quantities, tiered pricing, and subscription overrides with Hozaif and Nilanee before returning those plans. The orchestration plan schema accepts Ayaan’s optional quantitySupported, taxes, source, and per-cycle pricingModel fields and preserves them for the comparator. Unexpected fields are rejected.
 
 ### Sujeeth
 

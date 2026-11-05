@@ -20,8 +20,12 @@ export const planSchema: z.ZodType<PayPalBillingPlan> = z.strictObject({
   billingCycles: z.array(z.strictObject({
     sequence: z.number().int().positive(), tenure: z.enum(["TRIAL", "REGULAR"]), interval,
     totalCycles: z.number().int().nonnegative(), fixedPrice: money.optional(),
+    pricingModel: text.optional(),
   })).min(1),
   setupFee: money.optional(),
+  quantitySupported: z.boolean().optional(),
+  taxes: z.object({ percentage: z.string().regex(/^\d+(\.\d+)?$/), inclusive: z.boolean() }).optional(),
+  source: z.record(z.string(), z.unknown()).optional(),
 });
 
 const baseFinding = { offerLabel: text, field: z.enum(["trial", "recurring_price", "billing_interval", "setup_fee"]), summary: text, recommendation: text.optional() };

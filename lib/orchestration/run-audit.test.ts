@@ -96,3 +96,23 @@ test("replacement comparator can return needs_review and receives isolated input
   assert.equal(result.status, "needs_review");
   assert.equal(data.plan?.name, "Fixture offer");
 });
+
+test("preserves Ayaan's additive billing context through the comparator boundary", async () => {
+  const data = await input();
+  const plan = {
+    ...data.plan!,
+    quantitySupported: true,
+    taxes: { percentage: "8.25", inclusive: false },
+    source: { pricing_scheme: { tiers: [{ amount: "19.99" }] } },
+    billingCycles: data.plan!.billingCycles.map(cycle => ({ ...cycle, pricingModel: "TIERED" })),
+  };
+  let received: unknown;
+  const result = await runAudit({ ...data, plan }, args => {
+    received = args.plan;
+    return { status: "needs_review", offerLabel: args.claim.offerLabel, field: args.claim.field,
+      summary: "Pricing context requires comparator support.", website: args.claim.evidence };
+  });
+  assert.equal(result.status, "needs_review");
+  assert.deepEqual(received, plan);
+  assert.deepEqual(result.issues, []);
+});
