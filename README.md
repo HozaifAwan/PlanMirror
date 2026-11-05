@@ -266,6 +266,12 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 - **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
 
 
+## Audit orchestration integration
+
+The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
+
+Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks do not establish a live sandbox connection.
+
 ## Team handoff
 
 Pull `main`, create a feature branch, and open your PR against `main`. Suggested paths in the table may need to be created. Coordinate changes to shared contracts with Hozaif before building against them.

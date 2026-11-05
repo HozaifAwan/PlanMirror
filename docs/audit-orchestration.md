@@ -8,9 +8,9 @@ This branch provides a coordinator that accepts normalized data and calls an inj
 - `lib/orchestration/run-audit.ts` provides `runAudit(input, comparator)` and `runAuditFromProviders(providers, comparator)`. Each invocation owns its result and supplies each comparison with an isolated input snapshot.
 - `lib/orchestration/fixtures.ts` contains deliberately labeled sample providers and a scripted comparator. Its mismatch verdict is predetermined, so it demonstrates plumbing rather than financial correctness.
 - `lib/orchestration/run-audit.test.ts` verifies flow, missing inputs, ambiguity, provider and comparator failures, malformed data, mismatched evidence, and comparator replacement.
-- `scripts/test-orchestration.mjs` compiles the isolated tests using the existing TypeScript compiler, runs Node’s built-in test runner, and removes its temporary output even on failure. It adds no test framework.
+- `scripts/test-all.mjs` compiles the PayPal and orchestration tests using the existing TypeScript compiler, runs Node’s built-in test runner, and removes its temporary output even on failure. It adds no test framework.
 
-Run `npm test` for the fixture integration and unit tests. Tests use no credentials or external services.
+Run `npm test` for both the PayPal and orchestration unit/integration suites. After `npm run build`, run `npm run test:routes` to exercise the compiled Next.js handlers with mock PayPal transport. Tests use no credentials or external services.
 
 ## Minimal contracts
 
@@ -70,4 +70,46 @@ Providers run concurrently and both settle before a result is returned. A failed
 
 Adapters own request timeouts, authorization, cancellation, and response normalization. The caller owns merchant/offer mapping and trusted source collection. The coordinator validates evidence references but cannot establish the truth of an extracted quote or pricing calculation. It does not fetch arbitrary URLs or call providers itself.
 
-This work provides a library and executable fixture integration tests. Connecting it to a server action and UI should happen after teammates’ adapters and comparator are ready. No public endpoint or persistent storage is added.
+The server-only adapter in `lib/orchestration/sandbox-audit.ts` binds Ayaan's actual `readSandboxPlan` to `createPlanAudit`. Authorized backend callers pass a selected plan ID, claim provider, and optional comparator.
+
+The protected `POST /api/audits` endpoint accepts already normalized claims until Sujeeth's extraction adapter is connected. It uses Ayaan's existing bearer authorization and response helpers. Requests must use JSON, fit within 32 KiB, and contain at most 100 unique claim IDs. It rejects unknown top-level fields and validates inputs before calling PayPal. Upstream failures return HTTP 502 with a failed audit envelope. When the comparator is absent, successful retrieval returns HTTP 200 with `needs_review`, a `comparator_unavailable` issue, and plan/source references. This result does not assess whether advertised and configured prices match.
+
+The UI and extraction provider remain teammate dependencies. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. Leen should add application user authentication and rate limits before exposing it publicly.
+
+
+## Integration handoff for tomorrow
+
+Sujeeth should return `CandidateClaim[]` via a server-side function. Each candidate needs `id`, `claim`, and optional `ambiguity`. Use `claimsSchema.safeParse` to check his output. He can call `auditSandboxPlan(planId, () => extractClaims(...), comparator)` after authorizing the request. The current HTTP endpoint instead accepts those claims directly as JSON.
+
+Nilanee should implement `Comparator`. Pass it as the third argument in `sandbox-audit.ts` or from the route's server call once her module is available. Retain `needs_review` for unsupported semantics and evidence references on every conclusive finding.
+
+Example request body, using a deliberately illustrative plan ID and source:
+
+```json
+{
+  "planId": "P-REPLACEWITHYOURPLAN",
+  "claims": [{
+    "id": "renewal",
+    "claim": {
+      "offerLabel": "Selected offer",
+      "field": "recurring_price",
+      "price": { "value": "9.99", "currencyCode": "USD" },
+      "quotedInterval": { "unit": "MONTH", "count": 1 },
+      "evidence": { "url": "https://example.com/pricing", "quote": "USD 9.99 per month." }
+    }
+  }]
+}
+```
+
+Send the locally configured audit gate token in the Authorization Bearer header. Keep credentials out of JSON bodies and URLs.
+
+Ayaan's native TypeScript CLI scripts still need Node 22.18+ or 24. The combined `npm test` command now compiles modules with the installed TypeScript compiler, so the existing application minimum of Node 20.9 also supports both test suites. Leen can independently standardize the team's Node version.
+
+
+## Verification of the combined implementation
+
+The combined test runner uses the installed TypeScript compiler and Node's built-in test runner, with no added dependencies. The compiled handler tests call the real Next.js route exports with a mocked upstream fetch. They cover both PayPal read routes and the new audit route, including authorization failures, validation, size limits, missing plans, normalized results, absent comparators, upstream failures, and exclusion of test credentials from responses.
+
+A separate attempt using the real application listing handler and local credentials returned HTTP 502 because sandbox DNS/network access remains blocked in this execution environment. Its response contained no configured secrets. Live provider authentication is still pending independent verification here. Binding a local HTTP listener was also blocked, so compiled handler tests were used rather than claiming a socket-level HTTP smoke test.
+
+A local random read-gate token was added to ignored `.env.local` where it was missing. Existing PayPal credentials were preserved. No sandbox products, plans, subscriptions, or payments were created.

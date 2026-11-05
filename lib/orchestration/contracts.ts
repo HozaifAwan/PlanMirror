@@ -5,7 +5,7 @@ import type { PayPalBillingPlan } from "../paypal/types";
 const text = z.string().trim().min(1);
 const money = z.object({ value: z.string().regex(/^\d+(\.\d+)?$/), currencyCode: z.string().regex(/^[A-Z]{3}$/) });
 const interval = z.object({ unit: z.enum(["DAY", "WEEK", "MONTH", "YEAR"]), count: z.number().int().positive() });
-const website = z.object({ url: z.url().refine(value => ["https:", "http:"].includes(new URL(value).protocol)), quote: text });
+const website = z.object({ url: z.url().refine(value => ["https:", "http:"].includes(new URL(value).protocol)), quote: z.string().refine(value => value.trim().length > 0) });
 const paypal = z.object({ planId: text, fieldPath: text, retrievedAt: z.iso.datetime() });
 const baseClaim = { offerLabel: text, evidence: website };
 export const claimSchema: z.ZodType<AdvertisedSubscriptionClaim> = z.discriminatedUnion("field", [
@@ -47,10 +47,13 @@ export type AuditInput = {
   claims: CandidateClaim[];
 };
 
+export const claimsSchema: z.ZodType<CandidateClaim[]> = z.array(
+  z.object({ id: text, claim: claimSchema, ambiguity: text.optional() }),
+).max(100).refine(claims => new Set(claims.map(claim => claim.id)).size === claims.length);
+
 export const inputSchema: z.ZodType<AuditInput> = z.object({
   plan: planSchema.optional(),
-  claims: z.array(z.object({ id: text, claim: claimSchema, ambiguity: text.optional() }))
-    .refine(claims => new Set(claims.map(claim => claim.id)).size === claims.length),
+  claims: claimsSchema,
 });
 
 export type Comparator = (input: {
@@ -59,7 +62,7 @@ export type Comparator = (input: {
 }) => AuditFinding | Promise<AuditFinding>;
 
 export type AuditIssue = {
-  code: "missing_plan" | "missing_claims" | "ambiguous_claim" | "comparison_failed" | "invalid_finding" | "provider_failed" | "invalid_input";
+  code: "missing_plan" | "missing_claims" | "ambiguous_claim" | "comparison_failed" | "invalid_finding" | "provider_failed" | "invalid_input" | "comparator_unavailable";
   claimId?: string;
   stage?: "plan" | "claims";
 };
