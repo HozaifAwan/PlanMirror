@@ -2,14 +2,32 @@
 @import "tailwindcss";
 
 body {
-  font-family: system-ui, sans-serif;
+  font-family: "Century Gothic", Helvetica, Arial, sans-serif;
 }
 
 @theme {
   --color-canvas: #edeff3;
-  --color-ink: #0a0a0a;
+  --color-ink: #000000;
   --color-accent: #005eb8;
   --color-muted: #48617e;
   --color-line: #d5e3f2;
   --color-wash: #d9f3ff;
+}
+
+
+/* Crystalline: Values adapted from the inspected PayPal homepage. See docs/paypal-design-language.md. */
+.pm-hero-title {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.pm-primary-action {
+  padding: 12px 20px;
+  border-radius: 1000px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  transition: color 0.2s, background-color 0.2s;
 }

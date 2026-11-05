@@ -13,13 +13,13 @@ export default function Home() {
       <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
         <section className="px-2 py-8 text-center sm:py-14">
           <p className="inline-block rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink">Subscription audit workspace</p>
-          <h1 className="mx-auto mt-6 max-w-3xl text-balance text-4xl font-extrabold tracking-tight sm:text-6xl">
+          <h1 className="mx-auto mt-6 max-w-3xl text-balance pm-hero-title">
             See if your billing matches your promise.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
             Compare the terms on your pricing page with the billing plan configured in PayPal.
           </p>
-          <a href="#workflow" className="mt-7 inline-flex rounded-full bg-ink px-7 py-3 font-semibold text-white hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+          <a href="#workflow" className="mt-7 inline-flex pm-primary-action bg-ink text-white hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
             Explore the workflow
           </a>
         </section>
