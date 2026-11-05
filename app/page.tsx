@@ -11,15 +11,15 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6 py-5 text-lg font-bold tracking-tight">PlanMirror</div>
       </header>
       <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-        <section className="px-2 py-8 text-center sm:py-14">
-          <p className="inline-block rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink">Subscription audit workspace</p>
+        <section className="pm-hero px-2 py-8 text-center sm:py-14">
+          <p className="inline-block rounded-full pm-secondary-surface px-4 py-2 text-sm font-semibold text-ink">Subscription audit workspace</p>
           <h1 className="mx-auto mt-6 max-w-3xl text-balance pm-hero-title">
             See if your billing matches your promise.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
             Compare the terms on your pricing page with the billing plan configured in PayPal.
           </p>
-          <a href="#workflow" className="mt-7 inline-flex pm-primary-action bg-ink text-white hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+          <a href="#workflow" className="mt-7 inline-flex pm-primary-action focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
             Explore the workflow
             <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
               <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -31,7 +31,7 @@ export default function Home() {
           <h2 id="workflow" className="text-xl font-semibold">Audit workflow</h2>
           <ol className="mt-4 grid gap-4 md:grid-cols-3">
             {auditSteps.map(({ title, detail }, index) => (
-              <li key={title} className="rounded-2xl border border-line bg-white p-6">
+              <li key={title} className="rounded-3xl border border-line bg-white p-6">
                 <span aria-hidden="true" className="inline-grid size-9 place-items-center rounded-full bg-wash font-semibold text-accent">
                   {index + 1}
                 </span>

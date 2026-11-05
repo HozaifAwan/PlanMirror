@@ -2,7 +2,8 @@
 @import "tailwindcss";
 
 body {
-  font-family: "Century Gothic", Helvetica, Arial, sans-serif;
+  font-family: Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @theme {
@@ -17,6 +18,7 @@ body {
 
 /* Crystalline: Values adapted from the inspected PayPal homepage. See docs/paypal-design-language.md. */
 .pm-hero-title {
+  font-family: "Century Gothic", Helvetica, Arial, sans-serif;
   font-size: clamp(2.5rem, 5vw, 4.5rem);
   font-weight: 900;
   line-height: 1.1;
@@ -24,13 +26,52 @@ body {
 }
 
 .pm-primary-action {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 12px 20px;
   border-radius: 1000px;
+  background: #000;
+  color: #fff;
+  letter-spacing: -0.015em;
   font-size: 16px;
   font-weight: 700;
   line-height: 24px;
   transition: color 0.2s, background-color 0.2s;
+}
+
+.pm-primary-action:hover {
+  background: #333;
+}
+
+.pm-primary-action:active {
+  background: #4d4d4d;
+}
+
+.pm-secondary-surface {
+  background: #05378214;
+}
+
+.pm-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@keyframes hero-enter {
+  from {
+    opacity: 0.1;
+    transform: translateY(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pm-hero {
+    animation: hero-enter 0.7s cubic-bezier(0.37, 0.34, 0.26, 0.9) both;
+  }
 }
