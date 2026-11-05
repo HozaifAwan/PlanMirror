@@ -1,5 +1,7 @@
 # PlanMirror
 
+> **PayPal backend setup:** See [the sandbox integration guide](docs/paypal-sandbox.md) for the implemented protected list/detail routes, environment setup, mocked tests, live verification, and Quillfox test-plan provisioning. The historical prototype/demo sections below describe work beyond the current main application; the comparison engine, extraction and AG Studio integration are separate teammate workstreams.
+
 **AI-Powered Subscription Billing Integrity Auditor**
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
