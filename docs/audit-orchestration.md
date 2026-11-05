@@ -113,3 +113,13 @@ The combined test runner uses the installed TypeScript compiler and Node's built
 A separate attempt using the real application listing handler and local credentials returned HTTP 502 because sandbox DNS/network access remains blocked in this execution environment. Its response contained no configured secrets. Live provider authentication is still pending independent verification here. Binding a local HTTP listener was also blocked, so compiled handler tests were used rather than claiming a socket-level HTTP smoke test.
 
 A local random read-gate token was added to ignored `.env.local` where it was missing. Existing PayPal credentials were preserved. No sandbox products, plans, subscriptions, or payments were created.
+
+## Live application verification
+
+After building, use Node 22.18+ or 24 to run:
+
+```bash
+node --env-file=.env.local scripts/verify-sandbox-audit.mjs
+```
+
+The script starts and stops its own local Next.js production server on port 3137. It checks unauthorized requests, real plan listing and details, normalization, and the protected audit endpoint using the real sandbox reader. It uses an explicitly labeled fixture claim to test the orchestration handoff while extraction and comparison are pending. Success requires a review result with the selected real plan ID and preserved website evidence. It saves a safe summary in ignored `.next/sandbox-audit-verification.json`. No billing resources are created or modified.
