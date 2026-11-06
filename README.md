@@ -76,7 +76,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
+| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
 | Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
@@ -270,7 +270,7 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 
 The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
 
-Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks do not establish a live sandbox connection.
+Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks use mock transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Real extraction, comparison, and dashboard integration remain pending.
 
 ## Team handoff
 
@@ -279,11 +279,11 @@ Pull `main`, create a feature branch, and open your PR against `main`. Suggested
 | Teammate | Role | Start here | Coordinate with |
 | --- | --- | --- | --- |
 | Hozaif | Project Lead & System Architect | Shared contracts in `lib/audit/types.ts` and `lib/paypal/types.ts`, integration, and PRs | Everyone on contract changes |
-| Ayaan | PayPal API & Backend | `lib/paypal/types.ts`, then add the sandbox client under `lib/paypal/` and routes under `app/api/paypal/` | Nilanee on normalized plans and Leen on endpoint security |
+| Ayaan | PayPal API & Backend | `lib/paypal/types.ts`, then add the sandbox client under `lib/paypal/` and routes under `app/api/paypal/` | Nilanee on normalized plans on endpoint security |
 | Sujeeth | AI/LLM | `lib/audit/types.ts`, then add extraction and evidence validation under `lib/ai/` | Nilanee on claim shapes and Sebastian on evidence for the agent |
 | Nilanee | Business Logic & QA | `lib/audit/types.ts`, then add comparisons and tests under `lib/audit/` | Ayaan and Sujeeth on inputs and Sebastian on findings |
-| Crystalline | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
-| Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Crystalline on layout, Nilanee on findings, and Sujeeth on source evidence |
-| Leen | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
+| Sai | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
+| Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Sai on layout, Nilanee on findings, and Sujeeth on source evidence |
+| Open | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
 
-Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Crystalline owns the merchant and audit screens. Leen verifies the complete flow with sandbox credentials and prepares the demo.
+Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *open role* verifies the complete flow with sandbox credentials and prepares the demo.

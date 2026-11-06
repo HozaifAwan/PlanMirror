@@ -47,3 +47,7 @@ The list endpoint fetches detail records sequentially with a timeout per upstrea
 ## Source
 
 [Reviewed commit](https://github.com/HozaifAwan/hackathon-project/commit/9af71229281c7d631359315f2cde6eab42c2f97a) · [Ayaan's sandbox instructions](https://github.com/HozaifAwan/hackathon-project/blob/9af71229281c7d631359315f2cde6eab42c2f97a/docs/paypal-sandbox.md)
+
+## Subsequent integration status — November 5
+
+The sandbox reader is now bound to the protected audit coordinator. Combined tests and compiled-route checks pass. A later actual Next.js HTTP run on Hozaif’s Mac verified real sandbox listing, normalized plan retrieval, authorization, and audit evidence propagation. See `audit-orchestration.md` for the verified boundary: claims were labeled fixtures and financial comparison remains unconnected. The earlier network-blocked results above are historical. DevOps/security ownership is now open; Leen has left the project.

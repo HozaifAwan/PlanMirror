@@ -74,7 +74,7 @@ The server-only adapter in `lib/orchestration/sandbox-audit.ts` binds Ayaan's ac
 
 The protected `POST /api/audits` endpoint accepts already normalized claims until Sujeeth's extraction adapter is connected. It uses Ayaan's existing bearer authorization and response helpers. Requests must use JSON, fit within 32 KiB, and contain at most 100 unique claim IDs. It rejects unknown top-level fields and validates inputs before calling PayPal. Upstream failures return HTTP 502 with a failed audit envelope. When the comparator is absent, successful retrieval returns HTTP 200 with `needs_review`, a `comparator_unavailable` issue, and plan/source references. This result does not assess whether advertised and configured prices match.
 
-The UI and extraction provider remain teammate dependencies. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. Leen should add application user authentication and rate limits before exposing it publicly.
+The UI and extraction provider remain teammate dependencies. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. The open DevOps/security role should add application user authentication and rate limits before exposing it publicly.
 
 
 ## Integration handoff for tomorrow
@@ -103,14 +103,14 @@ Example request body, using a deliberately illustrative plan ID and source:
 
 Send the locally configured audit gate token in the Authorization Bearer header. Keep credentials out of JSON bodies and URLs.
 
-Ayaan's native TypeScript CLI scripts still need Node 22.18+ or 24. The combined `npm test` command now compiles modules with the installed TypeScript compiler, so the existing application minimum of Node 20.9 also supports both test suites. Leen can independently standardize the team's Node version.
+Ayaan's native TypeScript CLI scripts still need Node 22.18+ or 24. The combined `npm test` command now compiles modules with the installed TypeScript compiler, so the existing application minimum of Node 20.9 also supports both test suites. The DevOps owner can standardize the team's Node version.
 
 
 ## Verification of the combined implementation
 
 The combined test runner uses the installed TypeScript compiler and Node's built-in test runner, with no added dependencies. The compiled handler tests call the real Next.js route exports with a mocked upstream fetch. They cover both PayPal read routes and the new audit route, including authorization failures, validation, size limits, missing plans, normalized results, absent comparators, upstream failures, and exclusion of test credentials from responses.
 
-A separate attempt using the real application listing handler and local credentials returned HTTP 502 because sandbox DNS/network access remains blocked in this execution environment. Its response contained no configured secrets. Live provider authentication is still pending independent verification here. Binding a local HTTP listener was also blocked, so compiled handler tests were used rather than claiming a socket-level HTTP smoke test.
+An earlier restricted execution attempt returned a safe HTTP 502 because outbound DNS/network access and local listeners were blocked there. This limitation was subsequently bypassed by running the application normally on Hozaif’s Mac; the successful live verification below supersedes the earlier pending status.
 
 A local random read-gate token was added to ignored `.env.local` where it was missing. Existing PayPal credentials were preserved. No sandbox products, plans, subscriptions, or payments were created.
 
