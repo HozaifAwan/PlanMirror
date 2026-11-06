@@ -2,7 +2,12 @@ import { z } from "zod";
 import { claimsSchema } from "./contracts";
 import { planIdSchema } from "../paypal/normalize";
 
-export const auditRequestSchema = z.strictObject({ planId: planIdSchema, claims: claimsSchema });
+import { extractionSourceSchema } from "./extracted-audit";
+
+export const auditRequestSchema = z.union([
+  z.strictObject({ planId: planIdSchema, claims: claimsSchema }),
+  z.strictObject({ planId: planIdSchema, source: extractionSourceSchema }),
+]);
 const maximumBytes = 32 * 1024;
 
 export class AuditRequestError extends Error {

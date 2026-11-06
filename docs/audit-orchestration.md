@@ -125,3 +125,29 @@ node --env-file=.env.local scripts/verify-sandbox-audit.mjs
 The script starts and stops its own local Next.js production server on port 3137. It checks unauthorized requests, real plan listing and details, normalization, and the protected audit endpoint using the real sandbox reader. It uses an explicitly labeled fixture claim to test the orchestration handoff while extraction and comparison are pending. Success requires a review result with the selected real plan ID and preserved website evidence. It saves a safe summary in ignored `.next/sandbox-audit-verification.json`. No billing resources are created or modified.
 
 Live verification completed on Hozaif's Mac on November 5, 2026 using Node 22.23.4 and implementation commit `bebe340`. The running Next.js server rejected unauthorized/invalid requests, listed the sandbox account's real plans, retrieved and normalized plan `P-8BL77335HB870063TNLWDC7Q`, and carried that plan through `POST /api/audits`. Website evidence and plan references were retained. The comparison module was explicitly reported as unavailable. Claims were labeled fixtures, so this verifies the live PayPal-to-orchestration bridge. Real extraction, financial verdicts, and dashboard integration remain pending teammate work. No credentials were printed or billing resources modified.
+
+
+## Connected AI claim adapter
+
+`POST /api/audits` now accepts either the existing `{ planId, claims }` input or `{ planId, source }`. The modes are mutually exclusive. Both use the existing bearer gate, JSON validation, 32 KiB streamed body limit, and safe error envelopes.
+
+```json
+{
+  "planId": "P-REPLACEWITHYOURPLAN",
+  "source": {
+    "sourceUrl": "https://example.com/pricing",
+    "sourceText": "Pro: 30 days free, then USD 9.99 monthly.",
+    "offerLabel": "Pro"
+  }
+}
+```
+
+The authorized caller must supply trusted page text and explicitly select the offer associated with the plan. No page is fetched and no merchant identity is inferred. Text is preserved verbatim, capped at 20,000 characters within the request byte limit, and source URLs must be HTTP(S). The adapter is intended for the controlled demo; it does not introduce public user authentication or rate limiting.
+
+- `lib/orchestration/extracted-audit.ts` supplies `createExtractedPlanAudit` with injected extractor and plan-audit dependencies. The server-only binding in `sandbox-audit.ts` uses Sujeeth's `extractOffers` and Ayaan's existing sandbox reader, with no HTTP loopback.
+- Successful claims are validated against shared runtime contracts, filtered to the exact selected offer label, and rechecked for the exact source URL and contiguous quote. Deterministic SHA-256 claim IDs include a duplicate occurrence suffix. They are evidence identities, not database IDs.
+- Empty extraction or no selected-offer claims yields `missing_claims` and review. Extraction `needs_review` adds `extraction_needs_review` and supplies no invented claims. Provider exceptions return a failed audit with `provider_failed` at the claims stage; private exception details are excluded.
+- Nilanee's comparator is **not connected**. Valid extracted claims and PayPal evidence therefore return `needs_review` with `comparator_unavailable`. A future authorized server caller can inject her completed comparator through the existing optional argument. Nothing here implements financial rules.
+- Tests call the real extractor and PayPal normalizer with controlled transport and exercise the compiled Next.js source-mode route. They establish integration plumbing, not live OpenAI extraction accuracy or financial verdict correctness. A separate paid/live OpenAI run is still unverified.
+
+The earlier normalized-claims-only descriptions above describe the previous boundary; both input modes are now supported without changing the teammate provider implementations.

@@ -38,5 +38,6 @@ test("source evidence quotes retain their exact whitespace", async () => {
   const claims = await fixtureProviders.loadClaims();
   claims[0].claim.evidence.quote = "  USD 9.99 per month.\n";
   const result = await readAuditRequest(request(JSON.stringify({ planId: "P-TEST", claims })));
+  assert.ok("claims" in result);
   assert.equal(result.claims[0].claim.evidence.quote, claims[0].claim.evidence.quote);
 });

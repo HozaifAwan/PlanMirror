@@ -290,7 +290,7 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 
 ## Audit orchestration integration
 
-The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
+The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims or supplied pricing text plus a selected offer label. The AI adapter connects Sujeeth’s extractor to Ayaan’s plan reader; results explicitly require review until Nilanee’s comparator is ready. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
 
 Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks use mock transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Real extraction, comparison, and dashboard integration remain pending.
 
