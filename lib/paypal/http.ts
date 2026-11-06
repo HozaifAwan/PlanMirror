@@ -1,17 +1,12 @@
 import "server-only";
-import { timingSafeEqual } from "node:crypto";
 import { PayPalError } from "./client";
+import { RequestLimitError } from "../backend/request-limits";
 
-export function authorize(request: Request) {
-  const secret = process.env.PLANMIRROR_SANDBOX_READ_TOKEN;
-  if (!secret || secret.length < 32) throw new PayPalError(503, "Sandbox access is disabled.");
-  const actual = Buffer.from(request.headers.get("authorization") ?? "");
-  const expected = Buffer.from("Bearer " + secret);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new PayPalError(401, "Unauthorized.");
-}
-export function reply(data: unknown, status = 200) {
-  return Response.json(data, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+export { authorize } from "../backend/authorize";
+export function reply(data: unknown, status = 200, headers: Record<string, string> = {}) {
+  return Response.json(data, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...headers } });
 }
 export function failure(error: unknown) {
+  if (error instanceof RequestLimitError) return reply({ error: error.message }, 429, { "Retry-After": String(error.retryAfter) });
   return reply({ error: error instanceof PayPalError ? error.message : "Sandbox request failed." }, error instanceof PayPalError ? error.status : 502);
 }

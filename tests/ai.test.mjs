@@ -43,6 +43,8 @@ test('bounds extraction with a native 15-second signal and private request optio
     assert.equal(options.signal, controller.signal);
     assert.equal(options.cache, 'no-store');
     assert.equal(options.redirect, 'error');
+    assert.equal(JSON.parse(options.body).max_output_tokens, 4096);
+    assert.equal(JSON.parse(options.body).store, false);
     return response({ status: 'ok', claims: [claim] });
   } });
 });

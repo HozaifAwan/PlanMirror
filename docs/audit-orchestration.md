@@ -76,12 +76,12 @@ The server-only adapter in `lib/orchestration/sandbox-audit.ts` binds Ayaan's ac
 
 The protected `POST /api/audits` endpoint accepts either normalized claims or supplied source text with a selected offer label. Both modes use `compareSubscriptionTerms`. It uses the existing bearer authorization and response helpers. Requests must use JSON, fit within 32 KiB, and contain at most 100 unique claim IDs. It rejects unknown top-level fields and validates inputs before calling PayPal. Upstream failures return HTTP 502 with a failed audit envelope. Server callers using `createPlanAudit` directly without a comparator still receive the explicit `comparator_unavailable` fallback; the HTTP route supplies a comparator.
 
-The UI and extraction provider remain teammate dependencies. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. The open DevOps/security role should add application user authentication and rate limits before exposing it publicly.
+The extraction provider and comparison engine are connected to the API. The UI remains a teammate dependency. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. Ayaan owns DevOps/security per the latest team handoff. See [backend request budgets](backend-request-budgets.md) for implemented process-local limits and remaining public multi-instance authentication requirements.
 
 
 ## Integration handoff for tomorrow
 
-Sujeeth should return `CandidateClaim[]` via a server-side function. Each candidate needs `id`, `claim`, and optional `ambiguity`. Use `claimsSchema.safeParse` to check his output. He can call `auditSandboxPlan(planId, () => extractClaims(...), comparator)` after authorizing the request. The current HTTP endpoint instead accepts those claims directly as JSON.
+Sujeeth should return `CandidateClaim[]` via a server-side function. Each candidate needs `id`, `claim`, and optional `ambiguity`. Use `claimsSchema.safeParse` to check his output. He can call `auditSandboxPlan(planId, () => extractClaims(...), comparator)` after authorizing the request. The HTTP endpoint accepts either those claims directly as JSON or trusted source text for the connected extractor.
 
 The route now passes Nilanee's comparator as the third argument to both server audit functions. Retain `needs_review` for unsupported semantics and evidence references on every conclusive finding when extending its rules.
 
@@ -144,7 +144,7 @@ Live verification completed on Hozaif's Mac on November 5, 2026 using Node 22.23
 }
 ```
 
-The authorized caller must supply trusted page text and explicitly select the offer associated with the plan. No page is fetched and no merchant identity is inferred. Text is preserved verbatim, capped at 20,000 characters within the request byte limit, and source URLs must be HTTP(S). The adapter is intended for the controlled demo; it does not introduce public user authentication or rate limiting.
+The authorized caller must supply trusted page text and explicitly select the offer associated with the plan. No page is fetched and no merchant identity is inferred. Text is preserved verbatim, capped at 20,000 characters within the request byte limit, and source URLs must be HTTP(S). The adapter is intended for the controlled demo. Its routes now apply process-local request and provider budgets; they do not introduce public multi-user authentication.
 
 - `lib/orchestration/extracted-audit.ts` supplies `createExtractedPlanAudit` with injected extractor and plan-audit dependencies. The server-only binding in `sandbox-audit.ts` uses Sujeeth's `extractOffers` and Ayaan's existing sandbox reader, with no HTTP loopback.
 - Successful claims are validated against shared runtime contracts, filtered to the exact selected offer label, and rechecked for the exact source URL and contiguous quote. Deterministic SHA-256 claim IDs include a duplicate occurrence suffix. They are evidence identities, not database IDs.
@@ -157,3 +157,7 @@ The earlier normalized-claims-only descriptions above describe the previous boun
 ## Comparison merge verification
 
 After reconciling the comparison branch with PR #4, 66 automated tests, strict lint, TypeScript checks, the production build, and 20 compiled-handler checks passed. Compiled checks include matching normalized prices, extracted 30-day versus configured 7-day trial discrepancies, ambiguous extraction, provider failures, timeouts, authorization, and response credential checks. Read-only live PayPal verification also passed with the configured Quillfox plan and labeled fixture website claims, producing the expected mismatch. Real OpenAI extraction remains unverified without a local API key; mock success and failure paths are covered.
+
+## Backend request-budget hardening
+
+Both POST routes now share bounded JSON upload handling, and all API routes share an authenticated request budget. Audits and standalone extraction also share provider-rate and concurrency budgets. OpenAI output is capped at 4096 tokens with storage disabled; PayPal listing pages have an overall 30-second deadline. See [backend request budgets](backend-request-budgets.md) for exact status codes, verification instructions, and the per-process deployment boundary. Frontend files and shared financial contracts are unchanged.

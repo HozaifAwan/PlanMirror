@@ -38,3 +38,22 @@ test('rejects requests without authorization', async () => {
   process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
   assert.equal((await POST(request({ sourceUrl: 'https://example.com/pricing', sourceText }))).status, 401);
 });
+
+test('rejects non-HTTP sources, extra fields, oversized text and non-JSON requests before extraction', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  for (const body of [
+    { sourceUrl: 'file:///private', sourceText },
+    { sourceUrl: 'https://example.com', sourceText, apiKey: 'PRIVATE' },
+    { sourceUrl: 'https://example.com', sourceText: 'x'.repeat(20_001) },
+  ]) {
+    const result = await POST(authorizedRequest(body));
+    assert.equal(result.status, 400);
+    assert.equal(result.headers.get('cache-control'), 'no-store');
+    assert.equal(result.headers.get('x-content-type-options'), 'nosniff');
+  }
+  const wrongType = authorizedRequest({ sourceUrl: 'https://example.com', sourceText });
+  wrongType.headers.set('content-type', 'text/plain');
+  assert.equal((await POST(wrongType)).status, 415);
+  const oversized = authorizedRequest({ sourceUrl: 'https://example.com', sourceText: '漢'.repeat(12_000) });
+  assert.equal((await POST(oversized)).status, 413);
+});

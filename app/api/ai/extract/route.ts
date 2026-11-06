@@ -1,51 +1,32 @@
 import { z } from "zod";
-import { timingSafeEqual } from "node:crypto";
 import { extractOffers } from "../../../../lib/ai/extract";
+import { authorize } from "../../../../lib/backend/authorize";
+import { JsonRequestError, readJsonRequest } from "../../../../lib/backend/json-request";
+import { RequestLimitError, requestLimits } from "../../../../lib/backend/request-limits";
+import { PayPalError } from "../../../../lib/paypal/client";
 
 export const runtime = "nodejs";
 
-const requestSchema = z.object({ sourceText: z.string().trim().min(1).max(100_000), sourceUrl: z.string().url() });
+const requestSchema = z.strictObject({
+  sourceText: z.string().min(1).max(20_000).refine(value => value.trim().length > 0),
+  sourceUrl: z.url().refine(value => /^https?:\/\//i.test(value)),
+});
 
-function authorize(request: Request) {
-  const secret = process.env.PLANMIRROR_SANDBOX_READ_TOKEN;
-  if (!secret || secret.length < 32) throw new Error("Sandbox access is disabled.");
-  const actual = Buffer.from(request.headers.get("authorization") ?? "");
-  const expected = Buffer.from("Bearer " + secret);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error("Unauthorized.");
+function reply(data: unknown, status = 200, headers: Record<string, string> = {}) {
+  return Response.json(data, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...headers } });
 }
 
 export async function POST(request: Request) {
   try {
     authorize(request);
-    const reader = request.body?.getReader();
-    const decoder = new TextDecoder();
-    let bytes = 0;
-    let json = "";
-    if (reader) {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        bytes += value.byteLength;
-        if (bytes > 400_000) {
-          await reader.cancel();
-          return Response.json({ error: "Request body is too large." }, { status: 413 });
-        }
-        json += decoder.decode(value, { stream: true });
-      }
-    }
-    let input: unknown;
-    try {
-      input = JSON.parse(json + decoder.decode());
-    } catch {
-      return Response.json({ error: "Invalid JSON." }, { status: 400 });
-    }
-    const body = requestSchema.safeParse(input);
-    if (!body.success) return Response.json({ error: "Provide a valid sourceUrl and sourceText." }, { status: 400 });
-    return Response.json(await extractOffers(body.data), { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+    const body = requestSchema.safeParse(await readJsonRequest(request));
+    if (!body.success) return reply({ error: "Provide a valid sourceUrl and sourceText." }, 400);
+    return reply(await requestLimits.runProviderWork(() => extractOffers(body.data)));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "AI extraction failed.";
-    const status = message === "Unauthorized." ? 401 : message.includes("access is disabled") || message.includes("OPENAI_API_KEY") ? 503 : 502;
-    const safeMessage = status === 401 ? "Unauthorized." : status === 503 ? "Extraction is unavailable." : "AI extraction failed.";
-    return Response.json({ error: safeMessage }, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+    if (error instanceof JsonRequestError) return reply({ error: error.message }, error.status);
+    if (error instanceof RequestLimitError) return reply({ error: error.message }, 429, { "Retry-After": String(error.retryAfter) });
+    const status = error instanceof PayPalError ? error.status :
+      error instanceof Error && error.message === "OPENAI_API_KEY is not configured." ? 503 : 502;
+    return reply({ error: status === 401 ? "Unauthorized." : status === 503 ? "Extraction is unavailable." : "AI extraction failed." }, status);
   }
 }

@@ -61,6 +61,7 @@ test('invalid source and plan selection invoke neither provider', async () => {
   let calls = 0;
   const audit = createExtractedPlanAudit(createPlanAudit(async () => { calls++; return plan; }), async () => { calls++; return { status: 'ok', claims: [] }; });
   assert.equal((await audit(plan.id, { ...source, sourceUrl: 'file:///private' })).status, 'failed');
+  assert.equal((await audit(plan.id, { ...source, sourceUrl: 'not-a-url' })).status, 'failed');
   assert.equal((await audit('../invalid', source)).status, 'failed');
   assert.equal(calls, 0);
 });
