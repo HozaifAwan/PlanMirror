@@ -1,77 +1,108 @@
-/* Crystalline (Frontend/UI): Shared styles. Coordinate AG Studio theming with Sebastian. */
+/* Shared UI tokens: coordinate Sai's screens and Sebastian's Studio theme.
+   Evidence and adaptations: docs/paypal-design-language.md. */
 @import "tailwindcss";
 
-body {
-  font-family: Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
 @theme {
-  --color-canvas: #edeff3;
+  --color-canvas: #ffffff;
   --color-ink: #000000;
-  --color-accent: #005eb8;
-  --color-muted: #48617e;
-  --color-line: #d5e3f2;
-  --color-wash: #d9f3ff;
+  --color-accent: #0066f5;
+  --color-muted: #000000a1;
+  --color-line: #00000029;
+  --color-wash: #0537820a;
+  --color-brand-deep: #002991;
+  --color-brand-light: #60cdff;
+}
+:root {
+  --pm-font-body: Helvetica, Arial, sans-serif;
+  --pm-font-heading: "Century Gothic", Futura, Helvetica, Arial, sans-serif;
+  --pm-surface: #05378214;
+  --pm-surface-hover: #05378227;
+  --pm-surface-active: #0537823a;
+  --pm-primary-hover: #333333;
+  --pm-primary-active: #4d4d4d;
+  --pm-radius-card: 1.5rem;
+  --pm-radius-pill: 1000px;
+  --pm-content-width: 76rem;
+  --pm-focus: var(--color-accent);
+}
+html { scroll-padding-top: 2rem; }
+body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--pm-font-body); font-size: 1rem; line-height: 1.5; letter-spacing: -0.015em; -webkit-font-smoothing: antialiased; }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid var(--pm-focus); outline-offset: 4px; }
+#main-content:focus { outline: none; }
+:where(section[id]) { scroll-margin-top: 2rem; }
+.pm-container { width: min(var(--pm-content-width), calc(100% - 3rem)); margin-inline: auto; }
+.pm-header { border-bottom: 1px solid var(--color-line); }
+.pm-header-inner { min-height: 6rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.pm-wordmark { display: inline-flex; align-items: center; min-height: 3rem; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.05em; text-decoration: none; white-space: nowrap; }
+.pm-wordmark > span { color: var(--color-accent); }
+.pm-nav { display: flex; align-items: center; gap: 1rem; }
+.pm-nav-link { display: inline-flex; align-items: center; min-height: 3rem; padding-inline: 0.75rem; border-radius: var(--pm-radius-pill); font-weight: 700; text-decoration: none; }
+.pm-nav-link:hover { background: var(--color-wash); }
+.pm-nav-link:active { background: var(--pm-surface); }
+.pm-primary-action, .pm-secondary-action { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 3rem; padding: 0.75rem 1.25rem; border: 0; border-radius: var(--pm-radius-pill); font-size: 1rem; font-weight: 700; line-height: 1.5; text-align: center; text-decoration: none; transition: background-color 0.2s ease, color 0.2s ease; }
+.pm-primary-action { background: var(--color-ink); color: var(--color-canvas); }
+.pm-primary-action:hover { background: var(--pm-primary-hover); }
+.pm-primary-action:active { background: var(--pm-primary-active); }
+.pm-secondary-action, .pm-secondary-surface { background: var(--pm-surface); color: var(--color-ink); }
+.pm-secondary-action:hover { background: var(--pm-surface-hover); }
+.pm-secondary-action:active { background: var(--pm-surface-active); }
+.pm-skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 10; padding: 0.75rem 1.25rem; border-radius: 0.5rem; background: #fff; transform: translateY(-200%); }
+.pm-skip-link:focus { transform: translateY(0); }
+.pm-hero { display: flex; flex-direction: column; align-items: center; padding-block: clamp(4rem, 7vw, 7rem); text-align: center; }
+.pm-eyebrow { font-size: 0.875rem; font-weight: 700; }
+.pm-hero > .pm-eyebrow { padding: 0.5rem 1rem; border-radius: var(--pm-radius-pill); }
+.pm-hero-title, .pm-section-title, .pm-step-card h3 { font-family: var(--pm-font-heading); font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
+.pm-hero-title { max-width: 64rem; margin-top: 1.5rem; font-size: clamp(2.5rem, 5.2vw, 4.75rem); }
+.pm-hero-copy { max-width: 37rem; margin-top: 1.5rem; font-size: clamp(1.125rem, 1.5vw, 1.25rem); color: var(--color-muted); }
+.pm-hero > .pm-primary-action { margin-top: 2rem; }
+.pm-caption { font-size: 0.875rem; line-height: 1.5; color: var(--color-muted); }
+.pm-hero-note { margin-top: 1.25rem; }
+.pm-workflow { --pm-focus: var(--color-brand-deep); background: var(--color-brand-light); padding-block: clamp(3rem, 6vw, 5rem); }
+.pm-section-heading { max-width: 46rem; }
+.pm-section-title { margin-top: 1rem; font-size: clamp(2rem, 3.3vw, 3.25rem); }
+.pm-section-heading > p:last-child { margin-top: 1.25rem; font-size: 1.125rem; }
+.pm-step-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; margin-top: 2.5rem; }
+.pm-step-card { border-radius: var(--pm-radius-card); background: var(--color-canvas); padding: clamp(1.5rem, 2.5vw, 2rem); }
+.pm-step-number { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; background: var(--pm-surface); border-radius: var(--pm-radius-pill); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pm-step-label { margin-top: 2rem; font-size: 0.875rem; color: var(--color-muted); }
+.pm-step-card h3 { margin-top: 0.75rem; font-size: clamp(1.5rem, 2vw, 1.875rem); }
+.pm-step-detail { margin-top: 1rem; color: var(--color-muted); }
+.pm-workflow-note { margin-top: 1.5rem; }
+.pm-evidence { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; padding-block: clamp(3rem, 7vw, 6rem); }
+.pm-principles article { padding-block: 1.5rem; border-top: 1px solid var(--color-line); }
+.pm-principles h3 { font-size: 1.125rem; font-weight: 700; }
+.pm-principles p { margin-top: 0.5rem; color: var(--color-muted); }
+.pm-footer { border-top: 1px solid var(--color-line); }
+.pm-footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding-block: 2rem; }
+.pm-footer p { font-size: 0.875rem; color: var(--color-muted); }
+.pm-page-state { min-height: 55vh; padding-block: 4rem; }
+.pm-page-state p { max-width: 40rem; margin-top: 1rem; color: var(--color-muted); }
+.pm-page-state .pm-primary-action { margin-top: 2rem; }
+.pm-footer-copy { display: flex; flex: 1; justify-content: space-between; align-items: center; gap: 2rem; }
+/* PlanMirror breakpoints; independent of PayPal's marketing grid. */
+@media (max-width: 48rem) {
+  .pm-step-grid, .pm-evidence { grid-template-columns: 1fr; }
+  .pm-evidence { gap: 2rem; }
+  .pm-step-label { margin-top: 1.5rem; }
+  .pm-desktop-break { display: none; }
+}
+@media (max-width: 36rem) {
+  .pm-container { width: calc(100% - 2rem); }
+  .pm-header-inner { flex-wrap: wrap; gap: 0.5rem; padding-block: 1rem; }
+  .pm-nav { gap: 0.25rem; flex-wrap: wrap; }
+  .pm-nav-link { padding-inline: 0.5rem; }
+  .pm-secondary-action { padding-inline: 1rem; }
+  .pm-footer-copy { flex-direction: column; gap: .5rem; align-items: flex-start; }
+  .pm-footer-inner { gap: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
 
-
-/* Crystalline: Values adapted from the inspected PayPal homepage. See docs/paypal-design-language.md. */
-.pm-hero-title {
-  font-family: "Century Gothic", Helvetica, Arial, sans-serif;
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-}
-
-.pm-primary-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 12px 20px;
-  border-radius: 1000px;
-  background: #000;
-  color: #fff;
-  letter-spacing: -0.015em;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 24px;
-  transition: color 0.2s, background-color 0.2s;
-}
-
-.pm-primary-action:hover {
-  background: #333;
-}
-
-.pm-primary-action:active {
-  background: #4d4d4d;
-}
-
-.pm-secondary-surface {
-  background: #05378214;
-}
-
-.pm-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-@keyframes hero-enter {
-  from {
-    opacity: 0.1;
-    transform: translateY(2.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .pm-hero {
-    animation: hero-enter 0.7s cubic-bezier(0.37, 0.34, 0.26, 0.9) both;
-  }
-}
+.pm-agent-toggle { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 3.25rem; height: 3.25rem; border: 1px solid #ffffff66; border-radius: 1000px; background: #000; color: #fff; cursor: pointer; box-shadow: 0 3px 16px #00000026; }
+.pm-agent-toggle:hover { background: var(--pm-primary-hover); }
+.pm-agent-toggle[aria-pressed="true"] { background: var(--color-brand-deep); }
+.pm-markdown-view { max-width: 76rem; margin-inline: auto; padding: 2rem 1.5rem; }
+.pm-markdown-note { padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-line); color: #555; font-size: .875rem; }
+.pm-markdown-view pre { white-space: pre-wrap; overflow-wrap: anywhere; font: .9375rem/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+.pm-markdown-title { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }

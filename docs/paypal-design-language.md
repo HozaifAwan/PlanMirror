@@ -1,5 +1,7 @@
 # PayPal design reference for PlanMirror
 
+Expanded November 5, 2026 with a fresh public HTML/CSS inspection. The **Verified theme reference and implementation specification** below is the current implementation guide. The earlier browser samples are retained as historical observations; they are not a complete PayPal design system.
+
 Inspected November 5, 2026, using browser computed styles on the public US homepage. This is a reference for the observed homepage and its controls. Other PayPal products and responsive layouts can differ. [Source homepage](https://www.paypal.com/us/home)
 
 ## Verified computed styles
@@ -34,17 +36,17 @@ Values describe specific inspected elements. The cookie button is an example of 
 
 ## PlanMirror implementation
 
-Crystalline owns the page styling. Sebastian should coordinate dashboard surfaces and heading hierarchy with these tokens.
+Sai owns the page styling (updated team assignment). Sebastian should coordinate dashboard surfaces and heading hierarchy with these tokens.
 
 - Use the local Century Gothic / Helvetica / Arial fallback stack.
 - Use fluid hero typography with weight 900, line height 1.1, and letter spacing -0.03em.
 - Match the inspected primary action’s padding, radius, text size, and black-and-white contrast.
-- Keep the workflow visually distinct with a pale blue surface and white cards.
+- Keep the workflow visually distinct with a light-blue brand surface and white cards; the verified fill below replaces the earlier approximate pale blue.
 - Keep keyboard focus visible and permit touch controls at least 44px high.
 - Stack the workflow cards on small screens and keep the hero readable at narrow widths.
 - Retain PlanMirror branding and subscription-audit wording.
 
-The pale blue workflow fill, responsive breakpoints, focus treatment, and card layout are PlanMirror choices. PayPal’s proprietary font files were not imported. Font appearance will depend on which fallback is available locally.
+The workflow composition, responsive breakpoints, focus geometry, and card layout are PlanMirror choices. The current workflow fill is sampled from the theme, as documented below. PayPal’s proprietary font files were not imported. Font appearance will depend on which fallback is available locally.
 
 ## Extending the scaffold
 
@@ -66,7 +68,7 @@ For PlanMirror, use an audit workflow link in the header, a centered audit headl
 
 ## Colors and typography
 
-The computed heading and primary-action values above were read from the public page in the previous inspection. The current scaffold implements black foreground, white primary surfaces, a blue accent, gray labels, and a pale blue workflow panel. The exact PlanMirror colors are centralized in the CSS theme.
+The computed heading and primary-action values above were read from the public page in the previous inspection. The original scaffold implemented black foreground, white primary surfaces, a blue accent, gray labels, and an approximate pale blue workflow panel. The current implementation uses the verified semantic values below. The exact PlanMirror colors are centralized in the CSS theme.
 
 PayPal’s observed heading and text families are proprietary brand fonts. PlanMirror uses locally available Century Gothic, Helvetica, and Arial. Match hierarchy through size, weight, spacing, and line height. Visual matching will vary with the fallback font.
 
@@ -128,4 +130,149 @@ These examples express the observed visual patterns in independent CSS for the t
 
 ## Team application
 
-Crystalline can extend the header, hero, spacing, and responsive interface. Sebastian can carry the same colors, heading scale, and control shapes into AG Studio. Hozaif coordinates shared CSS changes. The reference captures visible design patterns and sampled computed values. It contains original implementation examples rather than a source archive.
+Sai can extend the header, hero, spacing, and responsive interface. Sebastian can carry the same colors, heading scale, and control shapes into AG Studio. Hozaif coordinates shared CSS changes. The reference captures visible design patterns and sampled computed values. It contains original implementation examples rather than a source archive.
+
+## Verified theme reference and implementation specification
+
+### Evidence, provenance and limits
+
+This update retrieved the public US homepage HTML and the linked CSS on November 5, 2026. These are **declared CSS values**, not newly measured browser-computed styles: the browser host was unavailable. The earlier Safari/browser samples above were not independently reproduced. Media queries, cascade, page variant, geography and installed fonts can change the rendered result. Public marketing styles do not establish the entire internal PayPal product design system.
+
+Primary sources:
+
+- [PayPal US homepage](https://www.paypal.com/us/home): current HTML links the `paypal60` marketing theme; the text hierarchy is a headline, short support copy and focused CTA, followed by grouped product sections.
+- [PayPal business page](https://www.paypal.com/us/business): business-specific hierarchy with a concise lead, paired actions and benefit groups. Its product content is not PlanMirror content.
+- [PayPal theme CSS, paypal60-DJqhL8L_](https://www.paypalobjects.com/marketing/pp-com-components-pds60/themes/paypal60-DJqhL8L_.css): `.paypal60` typography, component geometry and `.paypal60-palette .white-plate` / blue plate semantic colors. This is the source for the tables below.
+- [PayPal helper CSS, helpers-D6s78pYR](https://www.paypalobjects.com/marketing/pp-com-components-pds60/component-chunks/helpers-D6s78pYR.css): grid, typography and control implementations. Theme-specific selectors can override generic helper rules; do not sample a generic rule in isolation.
+- [Homepage hero CSS, HomepageHero-Cvb27bqe](https://www.paypalobjects.com/marketing/pp-com-components-pds60/component-chunks/HomepageHero-Cvb27bqe.css): campaign-specific media, responsive layouts and animation. It is a reference for variation, not a requirement to reproduce its campaign.
+- [Pentagram's PayPal identity case study](https://www.pentagram.com/work/paypal/story): primary design-agency account of the refreshed identity. It explains the geometric PayPal Pro family and utility text family, a black/white foundation with blue accents, and payment-gesture-inspired motion. PlanMirror adopts the visual principles, not the brand assets or promotional claims.
+- [PayPal accessibility statement](https://www.paypal.com/re/webapps/mpp/accessibility?locale.x=en_AU): documents keyboard access, logical focus, descriptive links, contrast and zoom support, with WCAG 2.2 AA as an ongoing goal. This is a regional statement, not a certification of this application.
+- [PayPal newsroom media resources](https://newsroom.paypal-corp.com/media-resources): official current logo/photography source if an authorized use is needed. PlanMirror retains its own wordmark and uses no downloaded PayPal logo or font.
+
+Downloaded CSS SHA-256 anchors (hashes identify this inspection, not a promise the hosted files never change):
+
+```text
+theme:   70907781a9f1221fbaeee1b7f38f47949608fc69ad7de260c6cd88cebd9d6168
+helpers: d29baf5715743586483ad04b539604199a6528975f3f8fad22fe3a322cbccc18
+hero:    f805c460c5548404acf70ff563900ab7f4a21584a0f2cbfc0aa6a8d95e96fddb
+```
+
+These references are inspectable source links, not runtime stylesheet dependencies. Implementation is independent CSS. Font files and complete vendor stylesheets are not copied into the repository. Older PayPal Open, legacy dark-blue buttons or yellow checkout examples should not silently override this selected `paypal60` reference; integrations can have different requirements.
+
+### Semantic color system
+
+The following values are read from the theme's white plate unless stated otherwise. Eight-digit hex values include alpha: they must be composited on their actual surface, not treated as opaque RGB.
+
+| Theme token / role | Verified value | PlanMirror mapping |
+| --- | --- | --- |
+| `style-background` | `#ffffff` | `--color-canvas`, main page and cards |
+| `style-general-text`, `style-headline-text` | `#000000` | `--color-ink` |
+| `style-general-text-muted` | `#000000a1` | `--color-muted`, composited on its surface |
+| `style-background-alt` | `#0537820a` | `--color-wash`, subtle neutral-blue wash |
+| `style-background-surface-alt` | `#05378214` | `--pm-surface`, labels and secondary actions |
+| `style-border-color`, `style-stroke-color` | `#00000029` | `--color-line`, decorative separators |
+| `style-focus-color`, `component-link` | `#0066f5` | `--color-accent`, focus and small brand accent |
+| `style-fill-1` | `#002991` | `--color-brand-deep`, reserved stronger brand surface |
+| `style-fill-2` | `#60cdff` | `--color-brand-light`, workflow section |
+| Blue-600 plate background | `#002991` | If used later: white text, light-blue highlights, light-blue focus |
+| Blue-600 plate focus | `#3db5ff` | Use on dark blue instead of white-plate focus |
+
+The previous `#005eb8`, `#48617e`, `#d5e3f2`, and `#d9f3ff` values were PlanMirror approximations, not established PayPal tokens. Current CSS replaces them. Do not assume the faint decorative border meets control-boundary contrast requirements: form controls need a separately validated visible boundary.
+
+### Typography and font substitution
+
+Declared theme families are `PayPal Pro` for headings and `PayPal Pro Text VF` for body/controls. Heading weight is 900; body is 400 and strong text 700. Headings use `-0.03em` tracking; ordinary text and controls use `-0.015em`. These declarations confirm the earlier heading/control samples while removing false precision tied to one viewport.
+
+Selected fluid scales from the `.paypal60` selectors:
+
+| Selector suffix | Size declaration in theme | Line height |
+| --- | --- | --- |
+| `heading-text-size-headline-3` | `clamp(2.65625rem, 5.91518vw - 1.12946rem, 5.96875rem)` | `1.1` |
+| `heading-text-size-headline-5` | `clamp(2rem, 3.23661vw - .0714286rem, 3.8125rem)` | `1.1` |
+| `heading-text-size-headline-7` | `clamp(1.53125rem, .495536rem + 1.6183vw, 2.4375rem)` | `1.1` |
+| `body-text-size-body` | `clamp(1rem, .714286rem + .446429vw, 1.25rem)` | `1.5` |
+| `body-text-size-body-large` | `clamp(1.15625rem, .691964rem + .725446vw, 1.5625rem)` | `1.5` |
+| `body-text-size-caption` | `.875rem` | `1.5` |
+
+These are examples from the scale, not instructions to use campaign display sizes inside dense tables. Rem-to-pixel examples assume a 16px root and must not disable user font sizing.
+
+PlanMirror deliberately uses a smaller bounded scale for its longer audit headline: hero `clamp(2.5rem, 5.2vw, 4.75rem)`, section heading `clamp(2rem, 3.3vw, 3.25rem)`, card heading `clamp(1.5rem, 2vw, 1.875rem)`, body 1rem/1.5 and caption .875rem/1.5. These are application choices, not copied PayPal scale names. Body stays readable at narrow widths; large headings use balanced wrapping.
+
+The fallback heading stack is Century Gothic, Futura, Helvetica, Arial, sans-serif; body is Helvetica, Arial, sans-serif. Futura is an added local fallback, not the proprietary PayPal face. Font availability and synthesized weight prevent pixel-identical typography. No font was downloaded or hotlinked; exact font conformity remains unverified and would require an appropriately authorized font.
+
+### Actions, navigation, shape and states
+
+Theme root declares a large control height of 3rem, padding `.75rem 1.25rem`, text 1rem/24px at weight 700 and border width zero. Helpers use pill corners for supported button treatments; the earlier measured primary radius was 1000px. Large controls therefore naturally reach 48px at a 16px root. Small theme controls can be 2rem high; PlanMirror deliberately uses large actions for its navigation and CTA.
+
+| Treatment, white plate | Rest | Hover | Pressed | Foreground |
+| --- | --- | --- | --- | --- |
+| Primary | `#000000` | `#333333` | `#4d4d4d` | White |
+| Secondary | `#05378214` | `#05378227` | `#0537823a` | Black |
+| Tertiary | Transparent | `#0537820a` | `#05378214` | Black |
+
+These hover/pressed values are now confirmed by the theme, superseding their earlier status as approximations. PlanMirror uses a 200ms background/color transition, preserving the earlier measured timing. Keyboard focus is a separate 3px blue outline with a 4px offset, an application choice; never suppress it simply because the button has a hover state. On the light-blue workflow surface, PlanMirror overrides the focus outline with deep blue `#002991`: the white-plate focus blue is only 2.77:1 against light blue. Dark plate controls need the corresponding inverse colors rather than reusing black-on-black controls.
+
+Use anchors for destinations and buttons for actions. Current navigation is in-page anchors; no nonfunctional dropdown chevrons or fake sign-in controls. The CTA now uses a directional arrow matching navigation, with its SVG hidden from assistive technology. Retain the chevron example above only for an actual expanding control or intentional downward navigation.
+
+The theme's generic card and pricing-card radius is 1.5rem, but the inspected homepage hero token is zero. Rounded panels are common, not universal. PlanMirror uses 24px cards inside a full-width rectangular blue workflow surface; avoid giving every section a pill or floating shadow.
+
+Disabled, busy, selected and error treatments have not been comprehensively established by this inspection. For future controls: use native disabled semantics; expose busy state and readable progress; make selected filters programmatically determinable; associate errors with inputs. Do not label invented disabled/error colors as PayPal values.
+
+### Layout, spacing and responsive behavior
+
+The helper stylesheet declares an initial four-inner-column grid and fluid gaps from 1rem to 2rem, plus several fluid spacing ranges. Other grid configurations and breakpoints appear in marketing components; there is no evidence that a fixed 12-column application dashboard is a universal PayPal mandate.
+
+PlanMirror's explicit application layout:
+
+- Container maximum 76rem, with 24px side gutters normally and 16px on narrow screens.
+- Header at least 6rem high, brand left and working navigation right; wraps naturally at 36rem and below.
+- Centered editorial hero with bounded heading/copy, a single black CTA, and a development/sandbox note. Vertical hero spacing is fluid from 4rem to 7rem.
+- Broad light-blue workflow section, left-aligned section hierarchy and three white cards. Card gap 1.5rem and padding 1.5–2rem.
+- Three workflow columns become one at 48rem and below. Evidence principles use two columns above that boundary and one below. Footer stacks at 36rem.
+- Section spacing is fluid, headings can wrap, and no fixed card heights clip text. Do not import marketing hero `100vh` effects into audit screens.
+
+These dimensions and breakpoints are independent adaptations. The original Safari layout sequence (header, centered lead, campaign media, editorial benefits, grouped features, utility/footer) is retained above as prior context. PlanMirror adopts the hierarchy and spacing without copying PayPal's campaign photography, product claims or complex scroll animation.
+
+### Forms, audit data and AG Studio handoff
+
+No form controls or AG Studio are added in this visual update. Their exact PayPal field geometry was not established, so these are **PlanMirror implementation requirements**, not verified PayPal specifications:
+
+- Persistent labels, clear helper text, visible control boundaries and inline errors tied through `aria-describedby`; placeholders are supplementary.
+- Never embed audit gate tokens or provider secrets into the client to make a form appear functional.
+- Neutral canvas/cards and black typography should carry the data. Blue denotes brand, focus or navigation; it must not also imply a successful audit.
+- Status badges must include explicit `match`, `mismatch` or `needs_review` wording. Select status colors independently, measure contrast and pair with text; do not invent a PayPal status palette.
+- Distinguish run failure from a billing mismatch. Keep quote, source URL, plan ID, field path and retrieval timestamp near the selected finding; review rows may lack some evidence.
+- Tables should preserve header associations, allow contained horizontal scrolling, wrap quotes and avoid truncating the only accessible evidence. Use tabular numerals for amount columns; preserve exact decimal strings and currency/cadence.
+- Apply the same local font, white/black surfaces, 24px outer card radius and focus accents through supported AG Studio theme APIs. Keep filter controls close to findings; reserve display typography for page/section headings, not every grid cell.
+- Keep sample versus actual sandbox labeling persistent; an agent answer should cite the same evidence as its selected finding.
+
+### Accessibility and motion
+
+The implementation adds a skip link, named navigation landmark, top-level header/footer landmarks, one H1, sequential headings, semantic ordered steps and working anchor destinations. All current navigation/action links and the wordmark have a minimum 48px height; the skip link uses explicit padding. A shared focus rule covers future native controls, too.
+
+Validate normal text at least 4.5:1 and large text at least 3:1; check meaningful UI boundaries/focus at 3:1 against adjacent colors. These numeric acceptance targets are PlanMirror's WCAG-oriented QA choices, not measurements of PayPal's conformance. Alpha text must be composited: `#000000a1` resolves differently on white and light blue. Do not put normal-size white text on the light-blue workflow fill.
+
+Reduced-motion preference disables transitions and animation. The earlier entrance animation is removed; no content starts transparent or translated, and comprehension does not depend on motion. Use browser zoom and text enlargement; preserve focus and visible text labels rather than relying on color or icons alone.
+
+### Implementation and review checklist
+
+The current implementation lives in `app/globals.css` (shared tokens/components) and `app/page.tsx` (header, hero, workflow and evidence principles). Sai owns merchant/audit presentation, Sebastian carries this language into the dashboard/agent, and Hozaif coordinates shared CSS and contracts.
+
+Before claiming a release is visually verified:
+
+- Run lint, typecheck and production build after the final edit.
+- Inspect at 320, 375, 768, 1024 and 1440px; check reflow at 200% zoom and no page-level horizontal overflow.
+- Tab through skip link, brand, navigation and CTA; verify visible focus and that every anchor reaches its labeled section.
+- Check primary/secondary hover and pressed states and reduced motion.
+- Measure text contrast on the actual composite backgrounds; retain explicit labels and development status.
+- Compare in an available browser with the current public reference, recording viewport/variant. That manual comparison and screenshot QA were unavailable in this session and must not be claimed complete.
+
+### Verification recorded for this update
+
+- `npm run lint -- --max-warnings=0`: passed after using Next's `Link` for home navigation.
+- `npm run typecheck`: passed; final production build also completed its TypeScript check.
+- `npm run build`: passed. Next warned that an unrelated lockfile outside the repository was ignored; this change did not alter tracing configuration.
+- `git diff --check`: passed.
+- Parsed generated production HTML: one H1, English document language, and every in-page anchor has an existing destination.
+- Calculated WCAG relative-luminance ratios after alpha compositing: muted text on white 6.48:1, muted text on light blue 5.17:1, white on primary black 21:1, focus blue on white 4.98:1. The light-blue-surface focus override avoids the original 2.77:1 combination.
+- No screenshot, viewport/reflow, interactive keyboard or computed-style browser checks were possible because the browser host was unavailable. No live API checks or deployment were performed for this presentation-only update.
