@@ -284,6 +284,6 @@ Pull `main`, create a feature branch, and open your PR against `main`. Suggested
 | Nilanee | Business Logic & QA | `lib/audit/types.ts`, then add comparisons and tests under `lib/audit/` | Ayaan and Sujeeth on inputs and Sebastian on findings |
 | Sai | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
 | Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Sai on layout, Nilanee on findings, and Sujeeth on source evidence |
-| Open | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
+| Ayaan | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
 
-Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *open role* verifies the complete flow with sandbox credentials and prepares the demo.
+Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *Ayaan* verifies the complete flow with sandbox credentials and prepares the demo.
