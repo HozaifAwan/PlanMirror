@@ -18,13 +18,14 @@ export type ExtractOffersInput = { sourceText: string; sourceUrl: string; apiKey
 export function parseResponsesText(body: unknown): string {
   if (!body || typeof body !== "object") throw new Error("OpenAI returned an invalid response.");
   const value = body as { status?: unknown; output_text?: unknown; output?: unknown };
-  if (value.status === "incomplete") throw new Error("OpenAI returned an incomplete extraction.");
+  if (value.status !== undefined && value.status !== "completed") throw new Error("OpenAI returned an incomplete extraction.");
   if (typeof value.output_text === "string") return value.output_text;
   if (!Array.isArray(value.output)) throw new Error("OpenAI returned no structured extraction.");
   const text = value.output.flatMap(item => {
     if (!item || typeof item !== "object" || (item as { type?: unknown }).type !== "message") return [];
     const content = (item as { content?: unknown }).content;
     if (!Array.isArray(content)) return [];
+    if (content.some(part => part?.type === "refusal")) throw new Error("OpenAI returned a refusal.");
     return content.flatMap(part => part && typeof part === "object" && (part as { type?: unknown }).type === "output_text" && typeof (part as { text?: unknown }).text === "string" ? [(part as { text: string }).text] : []);
   }).join("");
   if (!text) throw new Error("OpenAI returned no structured extraction.");
@@ -42,5 +43,24 @@ export async function extractOffers({ sourceText, sourceUrl, apiKey = process.en
   const result = extractionResponseSchema.safeParse(parsed);
   if (!result.success) throw new Error("OpenAI returned an invalid extraction shape.");
   if (result.data.status === "ok") for (const claim of result.data.claims) if (claim.evidence.url !== sourceUrl || !sourceText.includes(claim.evidence.quote)) return { status: "needs_review", claims: [], reason: "One or more extracted quotes could not be verified against the source." };
-  return result.data;
+  if (result.data.status === "needs_review") {
+    return { status: "needs_review", claims: [], reason: "The source requires manual review." };
+  }
+  const claims: Extract<ExtractionResponse, { status: "ok" }>["claims"] = [];
+  for (const claim of result.data.claims) {
+    if (claim.field === "trial") {
+      const { price, ...trial } = claim;
+      claims.push(price === null ? trial : { ...trial, price });
+    } else if (claim.field === "recurring_price") {
+      const { billedInterval, price, ...recurring } = claim;
+      if (price === null) return { status: "needs_review", claims: [], reason: "The recurring price is unclear." };
+      claims.push(billedInterval === null ? { ...recurring, price } : { ...recurring, price, billedInterval });
+    } else if (claim.field === "setup_fee") {
+      if (claim.price === null) return { status: "needs_review", claims: [], reason: "The setup fee is unclear." };
+      claims.push({ ...claim, price: claim.price });
+    } else {
+      claims.push(claim);
+    }
+  }
+  return { status: "ok", claims };
 }

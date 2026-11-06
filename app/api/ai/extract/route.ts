@@ -17,12 +17,35 @@ function authorize(request: Request) {
 export async function POST(request: Request) {
   try {
     authorize(request);
-    const body = requestSchema.safeParse(await request.json());
+    const reader = request.body?.getReader();
+    const decoder = new TextDecoder();
+    let bytes = 0;
+    let json = "";
+    if (reader) {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > 400_000) {
+          await reader.cancel();
+          return Response.json({ error: "Request body is too large." }, { status: 413 });
+        }
+        json += decoder.decode(value, { stream: true });
+      }
+    }
+    let input: unknown;
+    try {
+      input = JSON.parse(json + decoder.decode());
+    } catch {
+      return Response.json({ error: "Invalid JSON." }, { status: 400 });
+    }
+    const body = requestSchema.safeParse(input);
     if (!body.success) return Response.json({ error: "Provide a valid sourceUrl and sourceText." }, { status: 400 });
     return Response.json(await extractOffers(body.data), { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "AI extraction failed.";
     const status = message === "Unauthorized." ? 401 : message.includes("access is disabled") || message.includes("OPENAI_API_KEY") ? 503 : 502;
-    return Response.json({ error: message }, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+    const safeMessage = status === 401 ? "Unauthorized." : status === 503 ? "Extraction is unavailable." : "AI extraction failed.";
+    return Response.json({ error: safeMessage }, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   }
 }

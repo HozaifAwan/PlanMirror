@@ -12,12 +12,13 @@ export const extractedClaimSchema = z.discriminatedUnion("field", [
   z.object({ field: z.literal("setup_fee"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema.nullable() }),
 ]);
 
-export const extractionResponseSchema = z.object({ status: z.enum(["ok", "needs_review"]), claims: z.array(extractedClaimSchema), reason: z.string().min(1).optional() }).superRefine((value, ctx) => {
-  if (value.status === "ok" && value.claims.length === 0) ctx.addIssue({ code: "custom", message: "A successful extraction requires at least one claim." });
+export const extractionResponseSchema = z.object({ status: z.enum(["ok", "needs_review"]), claims: z.array(extractedClaimSchema), reason: z.string().min(1).nullish() }).superRefine((value, ctx) => {
   if (value.status === "needs_review" && !value.reason) ctx.addIssue({ code: "custom", message: "Review results require a reason." });
 });
 
 export type ExtractedClaim = z.infer<typeof extractedClaimSchema>;
-export type ExtractionResponse = z.infer<typeof extractionResponseSchema>;
+export type ExtractionResponse =
+  | { status: "ok"; claims: AdvertisedSubscriptionClaim[] }
+  | { status: "needs_review"; claims: []; reason: string };
 export type Claim = AdvertisedSubscriptionClaim;
 export type { BillingInterval, Money };

@@ -7,6 +7,20 @@ const claim = { field: 'recurring_price', offerLabel: 'PlanMirror Pro', evidence
 const response = value => new Response(JSON.stringify({ output_text: JSON.stringify(value) }), { status: 200 });
 const rawResponse = value => new Response(JSON.stringify({ status: 'completed', output: [{ type: 'reasoning', summary: [] }, { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: JSON.stringify(value) }] }] }), { status: 200 });
 
+test('normalizes nullable billing cadence without inventing a value', async () => {
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims: [{ ...claim, billedInterval: null }] }),
+  });
+  const { billedInterval, ...expected } = claim;
+  assert.deepEqual(result, { status: 'ok', claims: [expected] });
+});
+
+test('rejects refusals and incomplete output', () => {
+  assert.throws(() => parseResponsesText({ status: 'completed', output: [{ type: 'message', content: [{ type: 'refusal' }] }] }), /refusal/);
+  assert.throws(() => parseResponsesText({ status: 'incomplete', output: [] }), /incomplete/);
+});
+
 test('parses raw Responses API output after reasoning items', () => {
   assert.equal(parseResponsesText({ status: 'completed', output: [{ type: 'reasoning' }, { type: 'message', content: [{ type: 'output_text', text: '{"ok":true}' }] }] }), '{"ok":true}');
 });
