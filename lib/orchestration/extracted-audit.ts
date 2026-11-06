@@ -6,7 +6,7 @@ import type { createPlanAudit } from "./plan-audit";
 
 /** Text is supplied by a trusted caller; this adapter never fetches a URL. */
 export const extractionSourceSchema = z.strictObject({
-  sourceUrl: z.url().refine(value => ["http:", "https:"].includes(new URL(value).protocol)),
+  sourceUrl: z.url().refine(value => /^https?:\/\//i.test(value)),
   sourceText: z.string().min(1).max(20_000).refine(value => value.trim().length > 0),
   offerLabel: z.string().trim().min(1).max(200),
 });

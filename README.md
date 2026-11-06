@@ -294,6 +294,8 @@ The integration connects Ayaan's sandbox reader through a protected `POST /api/a
 
 Run `npm test` for backend, AI, comparison, and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal and OpenAI transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Live OpenAI extraction and dashboard integration remain unverified.
 
+Backend API limits and read-only verification instructions: [Backend request budgets](docs/backend-request-budgets.md).
+
 ## Team handoff
 
 Pull `main`, create a feature branch, and open your PR against `main`. Suggested paths in the table may need to be created. Coordinate changes to shared contracts with Hozaif before building against them.

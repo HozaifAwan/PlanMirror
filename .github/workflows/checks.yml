@@ -1,4 +1,4 @@
-# Leen (DevOps, Security & Demo): Maintain CI and integration checks here.
+# Ayaan (DevOps, Security & Demo): Maintain CI and integration checks here.
 name: Foundation checks
 
 on:

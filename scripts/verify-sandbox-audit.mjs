@@ -7,8 +7,10 @@ import { once } from "node:events";
 
 const base = "http://127.0.0.1:3137";
 const gate = process.env.PLANMIRROR_SANDBOX_READ_TOKEN;
+const id = process.env.PAYPAL_SANDBOX_PLAN_ID;
 assert.ok(gate?.length >= 32, "Configure the local sandbox read token first.");
 assert.ok(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET, "Configure sandbox credentials first.");
+assert.match(id ?? "", /^P-[A-Z0-9]{1,48}$/, "Set PAYPAL_SANDBOX_PLAN_ID explicitly to the intended seven-day Quillfox fixture.");
 const secrets = [gate, process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET];
 const passed = [];
 const server = spawn(process.execPath, [
@@ -42,8 +44,6 @@ try {
 
   const listing = await read("/api/paypal/plans?page_size=1", { headers }, 200);
   assert.ok(Array.isArray(listing.plans), "Invalid listing structure");
-  const id = process.env.PAYPAL_SANDBOX_PLAN_ID || listing.plans[0]?.id;
-  assert.ok(id, "The account has no plans. Individual-plan verification cannot proceed.");
   const plan = await read("/api/paypal/plans/" + id, { headers }, 200);
   assert.equal(plan.id, id);
   assert.ok(plan.productId && plan.status && plan.retrievedAt);
@@ -63,6 +63,7 @@ try {
     claim: {
       field: "trial", offerLabel: plan.name,
       duration: { unit: "DAY", count: 30 },
+      price: { value: "0", currencyCode: "USD" },
       evidence: { url: "https://example.com/fixture-pricing", quote: "FIXTURE: 30 days free." },
     },
   }];

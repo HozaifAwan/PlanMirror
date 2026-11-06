@@ -38,7 +38,7 @@ export async function extractOffers({ sourceText, sourceUrl, apiKey = process.en
   let response: Response;
   try {
     // The native fetch signal also bounds reading the response body.
-    response = await fetcher(endpoint, { method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000), headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, input: [{ role: "system", content: "Extract only subscription terms explicitly supported by the supplied source. Use exact contiguous quotes from the source. If terms are ambiguous, incomplete, unsupported, or cannot be quoted exactly, return needs_review." }, { role: "user", content: `Source URL: ${sourceUrl}\n\nSource text:\n${sourceText}` }], text: { format: { type: "json_schema", name: "planmirror_offer_extraction", strict: true, schema: outputSchema } } }) });
+    response = await fetcher(endpoint, { method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000), headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, max_output_tokens: 4096, store: false, input: [{ role: "system", content: "Extract only subscription terms explicitly supported by the supplied source. Use exact contiguous quotes from the source. If terms are ambiguous, incomplete, unsupported, or cannot be quoted exactly, return needs_review." }, { role: "user", content: `Source URL: ${sourceUrl}\n\nSource text:\n${sourceText}` }], text: { format: { type: "json_schema", name: "planmirror_offer_extraction", strict: true, schema: outputSchema } } }) });
   } catch {
     throw new Error("OpenAI extraction request failed.");
   }

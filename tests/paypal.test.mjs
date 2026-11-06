@@ -87,3 +87,53 @@ test('safe errors for invalid credentials, network failure, missing plans and ma
   }
   await assert.rejects(createSandboxClient({ ...config, environment: 'live' }).readPlan('P-TEST123'), { status: 503 });
 });
+
+test('listing deadline aborts detail retrieval and never continues to the next plan', async t => {
+  const controller = new AbortController();
+  const timeout = AbortSignal.timeout;
+  t.mock.method(AbortSignal, 'timeout', ms => ms === 30_000 ? controller.signal : timeout(ms));
+  let detailReads = 0;
+  const client = createSandboxClient(config, async (url, { signal }) => {
+    if (url.endsWith('/token')) return token();
+    if (url.includes('?')) return response({ plans: [{ id: 'P-ONE' }, { id: 'P-TWO' }], total_items: 2, total_pages: 1 });
+    detailReads++;
+    return new Promise((_, reject) => {
+      signal.addEventListener('abort', () => reject(Error('PRIVATE')), { once: true });
+      controller.abort();
+    });
+  });
+  await assert.rejects(client.listPlans(), { status: 504, message: 'Sandbox plan listing took too long. Retry with a smaller page_size.' });
+  assert.equal(detailReads, 1);
+});
+
+test('rejects upstream pages larger than requested before fetching their detail records', async () => {
+  let details = 0;
+  const client = createSandboxClient(config, async url => {
+    if (url.endsWith('/token')) return token();
+    if (url.includes('?')) return response({ plans: [{ id: 'P-ONE' }, { id: 'P-TWO' }], total_items: 2, total_pages: 1 });
+    details++;
+    return response(fixture());
+  });
+  await assert.rejects(client.listPlans(1, 1), { status: 502 });
+  assert.equal(details, 0);
+});
+
+test('listing timeout leaves shared OAuth usable by another reader', async t => {
+  const controller = new AbortController();
+  const timeout = AbortSignal.timeout;
+  t.mock.method(AbortSignal, 'timeout', ms => ms === 30_000 ? controller.signal : timeout(ms));
+  let releaseToken;
+  let listingReads = 0;
+  const client = createSandboxClient(config, async url => {
+    if (url.endsWith('/token')) return new Promise(resolve => { releaseToken = resolve; });
+    if (url.includes('?')) { listingReads++; assert.fail('expired listing must not start'); }
+    return response(fixture());
+  });
+  const listing = client.listPlans();
+  const detail = client.readPlan('P-TEST123');
+  controller.abort();
+  await assert.rejects(listing, { status: 504 });
+  releaseToken(token());
+  assert.equal((await detail).id, 'P-TEST123');
+  assert.equal(listingReads, 0);
+});

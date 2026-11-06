@@ -56,6 +56,7 @@ globalThis.fetch = async (url, options) => {
 const audit = require("../.next/server/app/api/audits/route.js").routeModule.userland.POST;
 const list = require("../.next/server/app/api/paypal/plans/route.js").routeModule.userland.GET;
 const detail = require("../.next/server/app/api/paypal/plans/[id]/route.js").routeModule.userland.GET;
+const extract = require("../.next/server/app/api/ai/extract/route.js").routeModule.userland.POST;
 
 async function check(label, handler, path, options, expected, context) {
   const response = await handler(new Request("http://localhost" + path, options), context);
@@ -127,6 +128,35 @@ failUpstream = true;
 const failed = await check("upstream failure stops audit safely", audit, "/api/audits",
   { method: "POST", headers: json, body: requestBody }, 502);
 assert.equal(failed.status, "failed");
+extractionMode = "ok";
+const extractBody = JSON.stringify({ sourceUrl: "https://example.com/pricing", sourceText: "30 days free." });
+await check("standalone extraction shares protected input handling", extract, "/api/ai/extract",
+  { method: "POST", headers: json, body: extractBody }, 200);
+await check("standalone extraction rejects non-JSON input", extract, "/api/ai/extract",
+  { method: "POST", headers: authorized, body: extractBody }, 415);
+let limited;
+for (let i = 0; i < 11; i++) {
+  const response = await extract(new Request("http://localhost/api/ai/extract", { method: "POST", headers: json, body: extractBody }));
+  if (response.status === 429) { limited = response; break; }
+  assert.equal(response.status, 200);
+}
+assert.ok(limited, "Provider budget must be enforced");
+assert.match(limited.headers.get("retry-after"), /^\d+$/);
+assert.equal(limited.headers.get("cache-control"), "no-store");
+const callsAtLimit = upstreamCalls;
+await check("provider budget is shared across extraction and audit bundles", audit, "/api/audits",
+  { method: "POST", headers: json, body: sourceBody }, 429);
+assert.equal(upstreamCalls, callsAtLimit);
+for (let i = 0; i < 61; i++) {
+  const response = await list(new Request("http://localhost/api/paypal/plans?page=0", { headers: authorized }));
+  if (response.status === 429) { limited = response; break; }
+  assert.equal(response.status, 400);
+  limited = undefined;
+}
+assert.ok(limited, "Authenticated request budget must be enforced");
+await check("request budget is shared with standalone extraction", extract, "/api/ai/extract",
+  { method: "POST", headers: json, body: extractBody }, 429);
+assert.equal(upstreamCalls, callsAtLimit);
 process.env.PLANMIRROR_SANDBOX_READ_TOKEN = "";
 await check("disabled gate fails closed", audit, "/api/audits", { method: "POST", headers: json, body: requestBody }, 503);
 console.log("Compiled route checks passed with mock PayPal transport.");
