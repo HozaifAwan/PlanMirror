@@ -7,7 +7,7 @@ try {
   execFileSync(process.execPath, [
     "node_modules/typescript/bin/tsc",
     "lib/orchestration/run-audit.test.ts", "lib/orchestration/plan-audit.test.ts",
-    "lib/orchestration/audit-request.test.ts", "lib/paypal/client.ts", "--outDir", output, "--rootDir", ".",
+    "lib/orchestration/audit-request.test.ts", "lib/paypal/client.ts", "lib/audit/compare-subscription-terms.ts", "--outDir", output, "--rootDir", ".",
     "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node",
     "--rewriteRelativeImportExtensions", "--esModuleInterop", "--strict", "--skipLibCheck",
   ], { stdio: "inherit" });

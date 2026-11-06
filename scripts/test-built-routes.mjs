@@ -74,11 +74,12 @@ const requestBody = JSON.stringify({
     price: { value: "9.99", currencyCode: "USD" }, quotedInterval: { unit: "MONTH", count: 1 },
     evidence: { url: "https://example.com/pricing", quote: "USD 9.99 monthly" } } }],
 });
-const result = await check("audit without comparator requires review", audit, "/api/audits",
+const result = await check("audit compares a normalized claim with sandbox plan", audit, "/api/audits",
   { method: "POST", headers: json, body: requestBody }, 200);
-assert.equal(result.status, "needs_review");
-assert.equal(result.findings[0].finding.status, "needs_review");
-assert.ok(result.issues.some(issue => issue.code === "comparator_unavailable"));
+assert.equal(result.status, "completed");
+assert.deepEqual(result.issues, []);
+assert.equal(result.findings[0].finding.status, "match");
+assert.equal(result.findings[0].finding.paypal.fieldPath, "billingCycles[0].fixedPrice");
 failUpstream = true;
 const failed = await check("upstream failure stops audit safely", audit, "/api/audits",
   { method: "POST", headers: json, body: requestBody }, 502);
