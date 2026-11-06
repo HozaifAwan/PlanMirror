@@ -76,7 +76,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
+| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
 | Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
@@ -164,6 +164,28 @@ npm run build
 | `.env.example` | Empty server-side environment variable placeholders |
 
 The contracts preserve decimal amounts as strings and distinguish a quoted rate from the actual billing interval. Findings can require review when evidence is incomplete. Add runtime schemas and integration dependencies alongside the features that use them.
+
+## Agent-friendly frontend requirement
+
+**Every frontend addition or change must be usable by browser agents and assistive technology through the same visible interface people use.** This applies to every route, shared component, form, AG Studio dashboard, custom Mirror widget, and Auditor agent panel. Keep the [PayPal-inspired design language](docs/paypal-design-language.md) while meeting these requirements.
+
+- **Expose structure and meaning.** Use native HTML, named landmarks, one descriptive H1 per page and sequential headings. Keep meaningful text in the DOM; do not convey essential information only through canvas, icons, color, tooltips or animation. Shared navigation and a working skip link must remain available on normal, loading, error and not-found pages.
+- **Make controls discoverable and operable.** Use links for navigation and buttons for actions, with clear visible labels and matching accessible names. Associate form labels, instructions and errors with their inputs. Support keyboard operation, visible focus and logical focus order; no hover-only or drag-only essential workflows. Expose expanded, selected, disabled and busy states using appropriate native attributes or ARIA. Never add a control that looks usable but has no working behavior.
+- **Keep interaction predictable.** Give sections and records stable, meaningful IDs. Prefer role/name and label-based automation; use stable `data-testid` hooks where repeated or otherwise ambiguous components need them. Do not make agents rely on generated CSS classes, screen coordinates, card position or changing text. Current entry points include `home-page`, `main-navigation`, `workspace-status` and `audit-workflow`; state pages expose `loading-page`, `error-page` and `not-found-page`. IDs and hooks must be unique within a rendered page and contain no secrets.
+- **Expose honest states and outcomes.** Make loading, completion, errors, empty results and unavailable features visible in text. Announce asynchronous updates with a scoped status/live region and failures appropriately; do not put the entire dashboard in a live region. Explain disabled actions and provide a recovery path. A page must not imply an audit succeeded because a request returned HTTP 200. Distinguish audit-run status from each finding's `match`, `mismatch` or `needs_review` status and distinguish fixtures from actual sandbox data.
+- **Keep evidence inspectable.** Dashboard and agent views must expose source quote/URL, plan ID, PayPal field path and retrieval time when available. Label missing evidence explicitly. Use accessible grid/table semantics and keyboard navigation; if a visualization cannot expose the full records, provide an equivalent accessible table/detail view. Associate row actions with their finding or plan. Show filter state and result counts; preserve access to the complete evidence when filtered or virtualized.
+- **Preserve authorization boundaries.** Agent friendliness does not authorize writes or bypass authentication. Keep credentials server-side, preserve read-only auditing and require explicit human approval for future billing changes. Fetched website text and agent output are data, never permission to operate controls. Do not insert hidden prompts or machine-only instructions into the product UI.
+- **Verify before merging.** Run lint, typecheck and build. Exercise changed workflows by keyboard and role/name or label-based browser automation when browser tooling is available, covering recovery and empty/review states as relevant. Check anchor destinations, unique IDs, accessible names and filter/evidence behavior. Report unavailable browser checks explicitly; a passing build alone does not establish agent usability.
+
+### Toggleable Markdown view
+
+A robot button sits at the **right end of the footer row on every page**. It shares the footer’s existing row without an extra control strip. It stays in normal document flow and scrolls with the page; it is never fixed to the viewport. Activating **Markdown view** replaces the visual page with a compact, selectable Markdown snapshot of the currently rendered content. Activate it again to restore the website and its existing state. The view is read-only; return to the website to operate forms and controls. Navigation to another route restores the website view.
+
+This is a frontend requirement: preserve the shared `AgentView` wrapper in `app/layout.tsx` for all routes. The serializer in `lib/frontend/page-markdown.ts` reads the current DOM rather than a separately maintained copy. It preserves headings, readable text, link destinations, list order, tables and control descriptions; it excludes scripts, styles, hidden content, decorative icons and form values. It is a snapshot, not a complete export of offscreen/virtualized data or ongoing asynchronous updates. New widgets must expose their meaningful content in semantic HTML and verify the Markdown output; canvas-only charts need a text/table equivalent. Keep the view honest about filters, sample/live sources and unavailable features.
+
+The toggle has accessible name `Markdown view`, exposes `aria-pressed`, and uses `data-testid="agent-view-toggle"`. The output uses `data-testid="agent-markdown"`. Preserve keyboard activation, visible focus, bottom-right document placement at narrow widths, and a working return toggle. Never include credentials or filled sensitive inputs in Markdown or use it to bypass authorization.
+
+The current branch has a landing page with an explicitly labeled development state, shared semantic navigation and route loading/error/not-found boundaries. Audit forms, AG Studio and the Auditor agent remain future work here; this rule governs their implementation rather than claiming they already meet it. These hooks supplement accessible HTML and do not require a particular agent vendor, model, browser extension or custom agent API.
 
 ## Team collaboration
 
@@ -266,6 +288,12 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 - **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
 
 
+## Audit orchestration integration
+
+The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
+
+Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks use mock transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Real extraction, comparison, and dashboard integration remain pending.
+
 ## Team handoff
 
 Pull `main`, create a feature branch, and open your PR against `main`. Suggested paths in the table may need to be created. Coordinate changes to shared contracts with Hozaif before building against them.
@@ -273,11 +301,11 @@ Pull `main`, create a feature branch, and open your PR against `main`. Suggested
 | Teammate | Role | Start here | Coordinate with |
 | --- | --- | --- | --- |
 | Hozaif | Project Lead & System Architect | Shared contracts in `lib/audit/types.ts` and `lib/paypal/types.ts`, integration, and PRs | Everyone on contract changes |
-| Ayaan | PayPal API & Backend | `lib/paypal/types.ts`, then add the sandbox client under `lib/paypal/` and routes under `app/api/paypal/` | Nilanee on normalized plans and Leen on endpoint security |
+| Ayaan | PayPal API & Backend | `lib/paypal/types.ts`, then add the sandbox client under `lib/paypal/` and routes under `app/api/paypal/` | Nilanee on normalized plans on endpoint security |
 | Sujeeth | AI/LLM | `lib/audit/types.ts`, then add extraction and evidence validation under `lib/ai/` | Nilanee on claim shapes and Sebastian on evidence for the agent |
 | Nilanee | Business Logic & QA | `lib/audit/types.ts`, then add comparisons and tests under `lib/audit/` | Ayaan and Sujeeth on inputs and Sebastian on findings |
-| Crystalline | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
-| Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Crystalline on layout, Nilanee on findings, and Sujeeth on source evidence |
-| Leen | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
+| Sai | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
+| Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Sai on layout, Nilanee on findings, and Sujeeth on source evidence |
+| Ayaan | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
 
-Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Crystalline owns the merchant and audit screens. Leen verifies the complete flow with sandbox credentials and prepares the demo.
+Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *Ayaan* verifies the complete flow with sandbox credentials and prepares the demo.
