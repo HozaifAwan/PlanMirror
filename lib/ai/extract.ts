@@ -2,7 +2,16 @@ import { extractionResponseSchema, type ExtractionResponse } from "./schema";
 
 const endpoint = "https://api.openai.com/v1/responses";
 const model = "gpt-4o-mini";
-const outputSchema = { type: "object", additionalProperties: false, required: ["status", "claims", "reason"], properties: { status: { type: "string", enum: ["ok", "needs_review"] }, claims: { type: "array", items: { type: "object", additionalProperties: true } }, reason: { type: ["string", "null"] } } };
+const money = { type: "object", additionalProperties: false, required: ["value", "currencyCode"], properties: { value: { type: "string", pattern: "^[0-9]+(\\.[0-9]+)?$" }, currencyCode: { type: "string", pattern: "^[A-Z]{3}$" } } };
+const interval = { type: "object", additionalProperties: false, required: ["unit", "count"], properties: { unit: { type: "string", enum: ["DAY", "WEEK", "MONTH", "YEAR"] }, count: { type: "integer", minimum: 1 } } };
+const evidence = { type: "object", additionalProperties: false, required: ["url", "quote"], properties: { url: { type: "string", format: "uri" }, quote: { type: "string", minLength: 1 } } };
+const claimBase = { offerLabel: { type: "string", minLength: 1 }, evidence };
+const outputSchema = { type: "object", additionalProperties: false, required: ["status", "claims", "reason"], properties: { status: { type: "string", enum: ["ok", "needs_review"] }, claims: { type: "array", items: { anyOf: [
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "duration", "price"], properties: { ...claimBase, field: { const: "trial" }, duration: interval, price: { anyOf: [money, { type: "null" }] } } },
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price", "quotedInterval", "billedInterval"], properties: { ...claimBase, field: { const: "recurring_price" }, price: money, quotedInterval: interval, billedInterval: { anyOf: [interval, { type: "null" }] } } },
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "interval"], properties: { ...claimBase, field: { const: "billing_interval" }, interval } },
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price"], properties: { ...claimBase, field: { const: "setup_fee" }, price: money } },
+] } }, reason: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] } } };
 
 export type ExtractOffersInput = { sourceText: string; sourceUrl: string; apiKey?: string; fetcher?: typeof fetch };
 
