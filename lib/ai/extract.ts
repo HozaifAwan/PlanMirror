@@ -6,20 +6,20 @@ const money = { type: "object", additionalProperties: false, required: ["value",
 const interval = { type: "object", additionalProperties: false, required: ["unit", "count"], properties: { unit: { type: "string", enum: ["DAY", "WEEK", "MONTH", "YEAR"] }, count: { type: "integer", minimum: 1 } } };
 const evidence = { type: "object", additionalProperties: false, required: ["url", "quote"], properties: { url: { type: "string", format: "uri" }, quote: { type: "string", minLength: 1 } } };
 const claimBase = { offerLabel: { type: "string", minLength: 1 }, evidence };
+const nullableMoney = { anyOf: [money, { type: "null" }] };
 const outputSchema = { type: "object", additionalProperties: false, required: ["status", "claims", "reason"], properties: { status: { type: "string", enum: ["ok", "needs_review"] }, claims: { type: "array", items: { anyOf: [
   { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "duration", "price"], properties: { ...claimBase, field: { const: "trial" }, duration: interval, price: { anyOf: [money, { type: "null" }] } } },
-  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price", "quotedInterval", "billedInterval"], properties: { ...claimBase, field: { const: "recurring_price" }, price: money, quotedInterval: interval, billedInterval: { anyOf: [interval, { type: "null" }] } } },
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price", "quotedInterval", "billedInterval"], properties: { ...claimBase, field: { const: "recurring_price" }, price: nullableMoney, quotedInterval: interval, billedInterval: { anyOf: [interval, { type: "null" }] } } },
   { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "interval"], properties: { ...claimBase, field: { const: "billing_interval" }, interval } },
-  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price"], properties: { ...claimBase, field: { const: "setup_fee" }, price: money } },
+  { type: "object", additionalProperties: false, required: ["field", "offerLabel", "evidence", "price"], properties: { ...claimBase, field: { const: "setup_fee" }, price: nullableMoney } },
 ] } }, reason: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] } } };
 
 export type ExtractOffersInput = { sourceText: string; sourceUrl: string; apiKey?: string; fetcher?: typeof fetch };
 
 export function parseResponsesText(body: unknown): string {
   if (!body || typeof body !== "object") throw new Error("OpenAI returned an invalid response.");
-  const value = body as { status?: unknown; output_text?: unknown; output?: unknown };
-  if (value.status !== undefined && value.status !== "completed") throw new Error("OpenAI returned an incomplete extraction.");
-  if (typeof value.output_text === "string") return value.output_text;
+  const value = body as { status?: unknown; output?: unknown };
+  if (value.status !== "completed") throw new Error("OpenAI returned an incomplete extraction.");
   if (!Array.isArray(value.output)) throw new Error("OpenAI returned no structured extraction.");
   const text = value.output.flatMap(item => {
     if (!item || typeof item !== "object" || (item as { type?: unknown }).type !== "message") return [];

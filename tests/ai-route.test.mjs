@@ -18,7 +18,7 @@ test('returns validated extraction results from the server route', async () => {
   const previousKey = process.env.OPENAI_API_KEY;
   process.env.OPENAI_API_KEY = 'test-key';
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(JSON.stringify({ output_text: JSON.stringify({ status: 'ok', claims: [claim] }) }), { status: 200 });
+  globalThis.fetch = async () => Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ status: 'ok', claims: [claim] }) }] }] });
   try {
     const response = await POST(authorizedRequest({ sourceUrl: 'https://example.com/pricing', sourceText }));
     assert.equal(response.status, 200);
