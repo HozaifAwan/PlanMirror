@@ -89,11 +89,36 @@ test("two trial phases follow sequence and count every cycle", () => {
   const configured = plan(regular("19", undefined, 3), intro(interval("DAY", 2), 2, "0", 2), intro(interval("WEEK")));
   check(configured, trial(interval("DAY", 11), "Eleven days free"), "match", "billingCycles", ["11 days", "0 USD"]);
   configured.billingCycles[1].fixedPrice = price("5");
-  check(configured, trial(interval("DAY", 11), "Eleven days free"), "mismatch", "billingCycles[1].fixedPrice", ["0 USD", "5 USD"]);
+  check(configured, trial(interval("DAY", 11), "Eleven days free"), "needs_review", "billingCycles", ["different or unsupported pricing"]);
   check(configured, renewal("19"), "match", "billingCycles[0].fixedPrice", ["19 USD"]);
   check(plan(intro(interval("WEEK"), 1, "5"), regular("19", undefined, 2)),
     trial(interval("DAY", 7), "First week for $5", { price: price("5") }),
     "match", "billingCycles[0].fixedPrice", ["7 days", "5 USD"]);
+});
+
+test("mixed free and paid introductory phases do not imply a longer free trial", () => {
+  const configured = plan(intro(interval("DAY", 7)), intro(interval("DAY", 30), 2, "5"), regular("19", undefined, 3));
+  for (const days of [7, 30, 37]) {
+    check(configured, trial(interval("DAY", days), `${days} days free`),
+      "needs_review", "billingCycles", ["different or unsupported pricing"]);
+  }
+});
+
+test("paid trial money verdicts require supported quantity and tax context", () => {
+  const configured = plan(intro(interval("WEEK"), 1, "5"), regular("19", undefined, 2));
+  for (const context of [
+    { quantitySupported: true },
+    { taxes: { percentage: "5", inclusive: false } },
+    { taxes: { percentage: "5", inclusive: true } },
+  ]) {
+    for (const value of ["5", "7"]) {
+      check({ ...configured, ...context }, trial(interval("DAY", 7), `First week for $${value}`, { price: price(value) }),
+        "needs_review", "billingCycles[0].fixedPrice", ["quantity or taxes"]);
+    }
+  }
+  check({ ...configured, quantitySupported: false, taxes: { percentage: "0", inclusive: false } },
+    trial(interval("DAY", 7), "First week for $5", { price: price("5") }),
+    "match", "billingCycles[0].fixedPrice", ["5 USD"]);
 });
 
 test("unknown prices, unsupported billing and absent trial terms", () => {

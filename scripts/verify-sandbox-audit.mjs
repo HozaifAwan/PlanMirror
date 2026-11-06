@@ -70,10 +70,11 @@ try {
     method: "POST", headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ planId: id, claims }),
   }, 200);
-  assert.ok(["completed", "needs_review"].includes(result.status));
+  assert.equal(result.status, "completed");
   assert.deepEqual(result.issues, []);
   assert.equal(result.findings.length, 1);
   const finding = result.findings[0].finding;
+  assert.equal(finding.status, "mismatch");
   assert.equal(finding.paypal.planId, id);
   assert.ok(finding.paypal.retrievedAt);
   assert.deepEqual(finding.website, claims[0].claim.evidence);

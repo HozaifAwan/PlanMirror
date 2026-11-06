@@ -77,9 +77,9 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
 | PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
-| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
-| Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
-| Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
+| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Implemented for supplied text; live OpenAI verification pending |
+| Trial and price checks | Detect supported discrepancies with deterministic comparisons | Implemented; unsupported pricing requires review |
+| Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Implemented for compatible fixed-price terms |
 | Evidence and explanations | Show source quotes beside retrieved PayPal fields | Planned |
 | AG Studio dashboard | Filter and inspect findings by plan, field, and severity | Planned |
 | Custom Auditor agent | Answer questions grounded in retrieved audit evidence | Planned |
@@ -290,9 +290,9 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 
 ## Audit orchestration integration
 
-The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
+The integration connects Ayaan's sandbox reader through a protected `POST /api/audits` route. It accepts normalized claims or supplied pricing text plus a selected offer label. Both modes use the subscription comparison engine and preserve source evidence. Unsupported pricing and ambiguous trial phases require review. See [the integration guide](docs/audit-orchestration.md) for provider interfaces and comparison safeguards.
 
-Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks use mock transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Real extraction, comparison, and dashboard integration remain pending.
+Run `npm test` for backend, AI, comparison, and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal and OpenAI transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Live OpenAI extraction and dashboard integration remain unverified.
 
 ## Team handoff
 

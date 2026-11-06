@@ -59,6 +59,16 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
     if (!trials.length) {
       return finding("mismatch", `Advertised trial: ${label}. PayPal has no trial cycle.`, "billingCycles");
     }
+    // A paid introductory phase does not extend the advertised free period.
+    // Aggregate only phases with the same known price.
+    if (trials.length > 1) {
+      const prices = trials.map(({ cycle }) => fixedPrice(cycle));
+      const first = prices[0];
+      if (!first || prices.some((price) => !price || price.currencyCode !== first.currencyCode ||
+          !new Decimal(price.value).eq(first.value))) {
+        return finding("needs_review", `Advertised trial: ${label}. PayPal trial phases have different or unsupported pricing; their durations cannot be combined reliably.`, "billingCycles");
+      }
+    }
     let total = BigInt(0);
     for (const { cycle } of trials) {
       const actual = duration(cycle.interval);
@@ -86,6 +96,9 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
 
     const [{ cycle, index }] = trials;
     const configured = fixedPrice(cycle);
+    if (plan.quantitySupported || (plan.taxes && !new Decimal(plan.taxes.percentage).isZero())) {
+      return finding("needs_review", `${summary} Paid trial pricing requires review for quantity or taxes.`, `billingCycles[${index}].fixedPrice`);
+    }
     if (trials.length === 1 && cycle.totalCycles === 1 && configured) {
       const result = compareMoney(trialPrice, configured, `billingCycles[${index}].fixedPrice`);
       return { ...result, summary: `${summary} ${result.summary}` };

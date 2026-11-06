@@ -1,6 +1,8 @@
 # Audit orchestration integration
 
-This branch provides a coordinator that accepts normalized data and calls an injected comparator. It reuses the existing shared interfaces without changing teammates’ feature files. The fetched main at the start of this work was `ead161b`. Ayaan’s new implementation was not present there. The backup server action and Quillfox comparator were reviewed as references. Their fixed offer assumptions and financial rules were not imported.
+The coordinator accepts normalized data and calls an injected comparator. The protected audit route now connects the subscription comparator to both normalized claims and AI-extracted source claims. It reuses the shared interfaces, PayPal reader, and extraction provider.
+
+Current comparison safeguards: paid trial prices with quantity-dependent billing or nonzero taxes require review. Differently priced introductory phases are not combined into a single advertised free trial; they require review. Multiple explicitly free phases can still be aggregated with their sequence and total cycle counts preserved. OpenAI requests use a 15-second timeout, no caching, and no redirects; transport failures return safe provider errors.
 
 ## Files and entry points
 
@@ -44,7 +46,7 @@ Implement `() => Promise<CandidateClaim[]>`. Return an empty list when there are
 
 ### Nilanee
 
-Implement `Comparator`, accepting `{ plan, claim }` and returning an `AuditFinding` synchronously or asynchronously. One claim produces one finding. Return `needs_review` when pricing semantics are unsupported. Carry forward the exact website evidence, plan ID, and timestamp. Use paths into the normalized plan such as `billingCycles[0].fixedPrice`. A thrown error becomes a review result for that claim while the other comparisons continue.
+Maintain `compareSubscriptionTerms`, implementing `Comparator` with `{ plan, claim }` input and an `AuditFinding` result. One claim produces one finding. Return `needs_review` when pricing semantics are unsupported. Carry forward the exact website evidence, plan ID, and timestamp. Use paths into the normalized plan such as `billingCycles[0].fixedPrice`. A thrown error becomes a review result for that claim while the other comparisons continue.
 
 ### Sebastian
 
@@ -72,7 +74,7 @@ Adapters own request timeouts, authorization, cancellation, and response normali
 
 The server-only adapter in `lib/orchestration/sandbox-audit.ts` binds Ayaan's actual `readSandboxPlan` to `createPlanAudit`. Authorized backend callers pass a selected plan ID, claim provider, and optional comparator.
 
-The protected `POST /api/audits` endpoint accepts already normalized claims until Sujeeth's extraction adapter is connected. It uses Ayaan's existing bearer authorization and response helpers. Requests must use JSON, fit within 32 KiB, and contain at most 100 unique claim IDs. It rejects unknown top-level fields and validates inputs before calling PayPal. Upstream failures return HTTP 502 with a failed audit envelope. When the comparator is absent, successful retrieval returns HTTP 200 with `needs_review`, a `comparator_unavailable` issue, and plan/source references. This result does not assess whether advertised and configured prices match.
+The protected `POST /api/audits` endpoint accepts either normalized claims or supplied source text with a selected offer label. Both modes use `compareSubscriptionTerms`. It uses the existing bearer authorization and response helpers. Requests must use JSON, fit within 32 KiB, and contain at most 100 unique claim IDs. It rejects unknown top-level fields and validates inputs before calling PayPal. Upstream failures return HTTP 502 with a failed audit envelope. Server callers using `createPlanAudit` directly without a comparator still receive the explicit `comparator_unavailable` fallback; the HTTP route supplies a comparator.
 
 The UI and extraction provider remain teammate dependencies. The endpoint is intended for the same controlled single-merchant demo as Ayaan's existing routes. The open DevOps/security role should add application user authentication and rate limits before exposing it publicly.
 
@@ -81,7 +83,7 @@ The UI and extraction provider remain teammate dependencies. The endpoint is int
 
 Sujeeth should return `CandidateClaim[]` via a server-side function. Each candidate needs `id`, `claim`, and optional `ambiguity`. Use `claimsSchema.safeParse` to check his output. He can call `auditSandboxPlan(planId, () => extractClaims(...), comparator)` after authorizing the request. The current HTTP endpoint instead accepts those claims directly as JSON.
 
-Nilanee should implement `Comparator`. Pass it as the third argument in `sandbox-audit.ts` or from the route's server call once her module is available. Retain `needs_review` for unsupported semantics and evidence references on every conclusive finding.
+The route now passes Nilanee's comparator as the third argument to both server audit functions. Retain `needs_review` for unsupported semantics and evidence references on every conclusive finding when extending its rules.
 
 Example request body, using a deliberately illustrative plan ID and source:
 
@@ -122,6 +124,36 @@ After building, use Node 22.18+ or 24 to run:
 node --env-file=.env.local scripts/verify-sandbox-audit.mjs
 ```
 
-The script starts and stops its own local Next.js production server on port 3137. It checks unauthorized requests, real plan listing and details, normalization, and the protected audit endpoint using the real sandbox reader. It uses an explicitly labeled fixture claim to test the orchestration handoff while extraction and comparison are pending. Success requires a review result with the selected real plan ID and preserved website evidence. It saves a safe summary in ignored `.next/sandbox-audit-verification.json`. No billing resources are created or modified.
+The script starts and stops its own local Next.js production server on port 3137. It checks unauthorized requests, real plan listing and details, normalization, and the protected audit endpoint using the real sandbox reader and comparator. It supplies a labeled 30-day trial fixture claim and expects a mismatch against the configured 7-day Quillfox plan. It saves a safe summary in ignored `.next/sandbox-audit-verification.json`. No billing resources are created or modified.
 
 Live verification completed on Hozaif's Mac on November 5, 2026 using Node 22.23.4 and implementation commit `bebe340`. The running Next.js server rejected unauthorized/invalid requests, listed the sandbox account's real plans, retrieved and normalized plan `P-8BL77335HB870063TNLWDC7Q`, and carried that plan through `POST /api/audits`. Website evidence and plan references were retained. The comparison module was explicitly reported as unavailable. Claims were labeled fixtures, so this verifies the live PayPal-to-orchestration bridge. Real extraction, financial verdicts, and dashboard integration remain pending teammate work. No credentials were printed or billing resources modified.
+
+
+## Connected AI claim adapter
+
+`POST /api/audits` now accepts either the existing `{ planId, claims }` input or `{ planId, source }`. The modes are mutually exclusive. Both use the existing bearer gate, JSON validation, 32 KiB streamed body limit, and safe error envelopes.
+
+```json
+{
+  "planId": "P-REPLACEWITHYOURPLAN",
+  "source": {
+    "sourceUrl": "https://example.com/pricing",
+    "sourceText": "Pro: 30 days free, then USD 9.99 monthly.",
+    "offerLabel": "Pro"
+  }
+}
+```
+
+The authorized caller must supply trusted page text and explicitly select the offer associated with the plan. No page is fetched and no merchant identity is inferred. Text is preserved verbatim, capped at 20,000 characters within the request byte limit, and source URLs must be HTTP(S). The adapter is intended for the controlled demo; it does not introduce public user authentication or rate limiting.
+
+- `lib/orchestration/extracted-audit.ts` supplies `createExtractedPlanAudit` with injected extractor and plan-audit dependencies. The server-only binding in `sandbox-audit.ts` uses Sujeeth's `extractOffers` and Ayaan's existing sandbox reader, with no HTTP loopback.
+- Successful claims are validated against shared runtime contracts, filtered to the exact selected offer label, and rechecked for the exact source URL and contiguous quote. Deterministic SHA-256 claim IDs include a duplicate occurrence suffix. They are evidence identities, not database IDs.
+- Empty extraction or no selected-offer claims yields `missing_claims` and review. Extraction `needs_review` adds `extraction_needs_review` and supplies no invented claims. Provider exceptions return a failed audit with `provider_failed` at the claims stage; private exception details are excluded.
+- The route supplies `compareSubscriptionTerms` to both input modes. Supported claims produce matches or mismatches; unsupported cases require review. Direct provider tests can still omit the comparator to exercise its explicit unavailable fallback.
+- Tests call the real extractor and PayPal normalizer with controlled transport and exercise the compiled Next.js source-mode route. They establish integration plumbing, not live OpenAI extraction accuracy or financial verdict correctness. A separate paid/live OpenAI run is still unverified.
+
+The earlier normalized-claims-only descriptions above describe the previous boundary; both input modes are now supported without changing the teammate provider implementations.
+
+## Comparison merge verification
+
+After reconciling the comparison branch with PR #4, 66 automated tests, strict lint, TypeScript checks, the production build, and 20 compiled-handler checks passed. Compiled checks include matching normalized prices, extracted 30-day versus configured 7-day trial discrepancies, ambiguous extraction, provider failures, timeouts, authorization, and response credential checks. Read-only live PayPal verification also passed with the configured Quillfox plan and labeled fixture website claims, producing the expected mismatch. Real OpenAI extraction remains unverified without a local API key; mock success and failure paths are covered.
