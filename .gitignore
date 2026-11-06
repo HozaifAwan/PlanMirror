@@ -231,5 +231,7 @@ next-env.d.ts
 # Shared TypeScript domain modules (the Python template ignores lib)
 !/lib/
 
+<<<<<<< HEAD
 # Local files
 skills/
+
