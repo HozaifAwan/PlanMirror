@@ -15,15 +15,30 @@ const outputSchema = { type: "object", additionalProperties: false, required: ["
 
 export type ExtractOffersInput = { sourceText: string; sourceUrl: string; apiKey?: string; fetcher?: typeof fetch };
 
+export function parseResponsesText(body: unknown): string {
+  if (!body || typeof body !== "object") throw new Error("OpenAI returned an invalid response.");
+  const value = body as { status?: unknown; output_text?: unknown; output?: unknown };
+  if (value.status === "incomplete") throw new Error("OpenAI returned an incomplete extraction.");
+  if (typeof value.output_text === "string") return value.output_text;
+  if (!Array.isArray(value.output)) throw new Error("OpenAI returned no structured extraction.");
+  const text = value.output.flatMap(item => {
+    if (!item || typeof item !== "object" || (item as { type?: unknown }).type !== "message") return [];
+    const content = (item as { content?: unknown }).content;
+    if (!Array.isArray(content)) return [];
+    return content.flatMap(part => part && typeof part === "object" && (part as { type?: unknown }).type === "output_text" && typeof (part as { text?: unknown }).text === "string" ? [(part as { text: string }).text] : []);
+  }).join("");
+  if (!text) throw new Error("OpenAI returned no structured extraction.");
+  return text;
+}
+
 export async function extractOffers({ sourceText, sourceUrl, apiKey = process.env.OPENAI_API_KEY, fetcher = fetch }: ExtractOffersInput): Promise<ExtractionResponse> {
   if (!sourceText.trim()) return { status: "needs_review", claims: [], reason: "The source contains no extractable text." };
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
   const response = await fetcher(endpoint, { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, input: [{ role: "system", content: "Extract only subscription terms explicitly supported by the supplied source. Use exact contiguous quotes from the source. If terms are ambiguous, incomplete, unsupported, or cannot be quoted exactly, return needs_review." }, { role: "user", content: `Source URL: ${sourceUrl}\n\nSource text:\n${sourceText}` }], text: { format: { type: "json_schema", name: "planmirror_offer_extraction", strict: true, schema: outputSchema } } }) });
   if (!response.ok) throw new Error(`OpenAI extraction failed with status ${response.status}.`);
-  const body = await response.json() as { output_text?: unknown };
-  if (typeof body.output_text !== "string") throw new Error("OpenAI returned no structured extraction.");
+  const body = await response.json();
   let parsed: unknown;
-  try { parsed = JSON.parse(body.output_text); } catch { throw new Error("OpenAI returned malformed extraction JSON."); }
+  try { parsed = JSON.parse(parseResponsesText(body)); } catch (error) { if (error instanceof Error && error.message.startsWith("OpenAI returned")) throw error; throw new Error("OpenAI returned malformed extraction JSON."); }
   const result = extractionResponseSchema.safeParse(parsed);
   if (!result.success) throw new Error("OpenAI returned an invalid extraction shape.");
   if (result.data.status === "ok") for (const claim of result.data.claims) if (claim.evidence.url !== sourceUrl || !sourceText.includes(claim.evidence.quote)) return { status: "needs_review", claims: [], reason: "One or more extracted quotes could not be verified against the source." };

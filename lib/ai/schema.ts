@@ -6,10 +6,10 @@ const intervalSchema = z.object({ unit: z.enum(["DAY", "WEEK", "MONTH", "YEAR"])
 const evidenceSchema = z.object({ url: z.string().url(), quote: z.string().min(1) });
 
 export const extractedClaimSchema = z.discriminatedUnion("field", [
-  z.object({ field: z.literal("trial"), offerLabel: z.string().min(1), evidence: evidenceSchema, duration: intervalSchema, price: moneySchema.optional() }),
-  z.object({ field: z.literal("recurring_price"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema, quotedInterval: intervalSchema, billedInterval: intervalSchema.optional() }),
+  z.object({ field: z.literal("trial"), offerLabel: z.string().min(1), evidence: evidenceSchema, duration: intervalSchema, price: moneySchema.nullable() }),
+  z.object({ field: z.literal("recurring_price"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema.nullable(), quotedInterval: intervalSchema, billedInterval: intervalSchema.nullable() }),
   z.object({ field: z.literal("billing_interval"), offerLabel: z.string().min(1), evidence: evidenceSchema, interval: intervalSchema }),
-  z.object({ field: z.literal("setup_fee"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema }),
+  z.object({ field: z.literal("setup_fee"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema.nullable() }),
 ]);
 
 export const extractionResponseSchema = z.object({ status: z.enum(["ok", "needs_review"]), claims: z.array(extractedClaimSchema), reason: z.string().min(1).optional() }).superRefine((value, ctx) => {
