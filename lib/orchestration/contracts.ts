@@ -62,7 +62,7 @@ export type Comparator = (input: {
 }) => AuditFinding | Promise<AuditFinding>;
 
 export type AuditIssue = {
-  code: "missing_plan" | "missing_claims" | "ambiguous_claim" | "comparison_failed" | "invalid_finding" | "provider_failed" | "invalid_input" | "comparator_unavailable";
+  code: "missing_plan" | "missing_claims" | "ambiguous_claim" | "comparison_failed" | "invalid_finding" | "provider_failed" | "invalid_input" | "comparator_unavailable" | "extraction_needs_review";
   claimId?: string;
   stage?: "plan" | "claims";
 };
