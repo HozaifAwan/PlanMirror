@@ -1,48 +1,56 @@
 const auditSteps = [
-  { title: "Advertised offer", detail: "Show the pricing page and the exact subscription terms it promises." },
-  { title: "PayPal billing plan", detail: "Display the trial and renewal terms from the merchant’s sandbox plan." },
-  { title: "Audit findings", detail: "Compare both sources and surface discrepancies with evidence." },
+  { id: "advertised-offer", title: "Start with the promise.", label: "Advertised offer", detail: "Bring the exact subscription terms from your pricing page, FAQ, and offer copy." },
+  { id: "paypal-plan", title: "Look behind the billing.", label: "PayPal billing plan", detail: "Retrieve the trial, price, and renewal cadence configured in your PayPal sandbox plan." },
+  { id: "audit-findings", title: "See where they differ.", label: "Audit findings", detail: "Inspect matches, discrepancies, and terms that need review, with evidence from both sources." },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white text-ink">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-5 text-lg font-bold tracking-tight">PlanMirror</div>
-      </header>
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-        <section className="pm-hero px-2 py-8 text-center sm:py-14">
-          <p className="inline-block rounded-full pm-secondary-surface px-4 py-2 text-sm font-semibold text-ink">Subscription audit workspace</p>
-          <h1 className="mx-auto mt-6 max-w-3xl text-balance pm-hero-title">
-            See if your billing matches your promise.
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
-            Compare the terms on your pricing page with the billing plan configured in PayPal.
-          </p>
-          <a href="#workflow" className="mt-7 inline-flex pm-primary-action focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+      <main id="main-content" tabIndex={-1} aria-labelledby="hero-title" aria-describedby="workspace-status" data-testid="home-page">
+        <section className="pm-container pm-hero" aria-labelledby="hero-title">
+          <p className="pm-eyebrow pm-secondary-surface">Subscription billing integrity</p>
+          <h1 id="hero-title" className="pm-hero-title">See if your billing<br className="pm-desktop-break" /> matches your promise.</h1>
+          <p className="pm-hero-copy">Your pricing page makes a promise. PlanMirror helps you check that your PayPal billing plan keeps it.</p>
+          <a href="#workflow" className="pm-primary-action">
             Explore the workflow
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
-              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </a>
+          <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status" data-state="in-development">In development · Read-only sandbox auditing</p>
         </section>
-        {/* Crystalline owns the audit screens. Coordinate the findings slot with Sebastian. */}
-        <section className="mt-8 rounded-3xl bg-wash p-6 sm:p-10" aria-labelledby="workflow">
-          <h2 id="workflow" className="text-xl font-semibold">Audit workflow</h2>
-          <ol className="mt-4 grid gap-4 md:grid-cols-3">
-            {auditSteps.map(({ title, detail }, index) => (
-              <li key={title} className="rounded-3xl border border-line bg-white p-6">
-                <span aria-hidden="true" className="inline-grid size-9 place-items-center rounded-full bg-wash font-semibold text-accent">
-                  {index + 1}
-                </span>
-                <h3 className="mt-4 font-semibold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{detail}</p>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-4 text-sm text-muted">Scaffold preview. Audit tools are in development.</p>
+        {/* Sai owns merchant/audit screens; coordinate the dashboard handoff with Sebastian. */}
+        <section id="workflow" className="pm-workflow" aria-labelledby="workflow-title">
+          <div className="pm-container">
+            <div className="pm-section-heading">
+              <p className="pm-eyebrow">How it works</p>
+              <h2 id="workflow-title" className="pm-section-title">One offer. Both sides of the story.</h2>
+              <p>Follow the promise from your website to your billing configuration.</p>
+            </div>
+            <ol className="pm-step-grid" aria-labelledby="workflow-title" data-testid="audit-workflow">
+              {auditSteps.map(({ id, title, label, detail }, index) => (
+                <li key={id} id={id} className="pm-step-card" aria-labelledby={`${id}-title`} aria-describedby={`${id}-detail`}>
+                  <span className="pm-step-number" aria-hidden="true">0{index + 1}</span>
+                  <p className="pm-step-label">{label}</p>
+                  <h3 id={`${id}-title`}>{title}</h3>
+                  <p id={`${id}-detail`} className="pm-step-detail">{detail}</p>
+                </li>
+              ))}
+            </ol>
+            <p className="pm-caption pm-workflow-note">Workflow preview. Audit tools are still in development.</p>
+          </div>
         </section>
-      </div>
-    </main>
+        <section id="evidence" className="pm-container pm-evidence" aria-labelledby="evidence-title">
+          <div>
+            <p className="pm-eyebrow">Clarity at every step</p>
+            <h2 id="evidence-title" className="pm-section-title">A finding should come with the facts.</h2>
+          </div>
+          <div className="pm-principles">
+            <article aria-labelledby="source-evidence-title"><h3 id="source-evidence-title">Keep the evidence close.</h3><p>Findings should connect the original website quote with the PayPal plan, billing field, and retrieval time.</p></article>
+            <article aria-labelledby="uncertainty-title"><h3 id="uncertainty-title">Make uncertainty visible.</h3><p>AI interprets the wording. Deterministic comparisons check supported terms. Missing or ambiguous evidence needs review.</p></article>
+            <article aria-labelledby="read-only-title"><h3 id="read-only-title">Review before changing.</h3><p>The initial auditor is read-only. You decide how to resolve a discrepancy; PlanMirror does not change billing plans.</p></article>
+          </div>
+        </section>
+      </main>
   );
 }
