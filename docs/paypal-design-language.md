@@ -128,4 +128,4 @@ These examples express the observed visual patterns in independent CSS for the t
 
 ## Team application
 
-Crystalline can extend the header, hero, spacing, and responsive interface. Sebastian can carry the same colors, heading scale, and control shapes into AG Studio. Hozaif coordinates shared CSS changes. The reference captures visible design patterns and sampled computed values. It contains original implementation examples rather than a source archive.
+Sai can extend the header, hero, spacing, and responsive interface. Sebastian can carry the same colors, heading scale, and control shapes into AG Studio. Hozaif coordinates shared CSS changes. The reference captures visible design patterns and sampled computed values. It contains original implementation examples rather than a source archive.
