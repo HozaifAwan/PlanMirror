@@ -42,3 +42,5 @@ PAYPAL_SANDBOX_PLAN_ID=P-YOUR_EXISTING_FIXTURE node --env-file=.env.local script
 ```
 
 This script no longer falls back to an arbitrary first plan. It starts a production server on localhost, checks authorization and real sandbox retrieval, and compares a labeled 30-day website fixture claim with the selected plan. It does not call OpenAI, create resources, or modify billing. Its report is written under ignored `.next/`. Missing OpenAI configuration remains a separate teammate dependency.
+
+Verified November 6, 2026 on Hozaif's Mac against implementation commit `1cb5e854e1dc23f7b3f951b32440e7676ecf5fa1`: 75 automated tests, strict lint, typecheck, production build, and 24 compiled route checks passed. The read-only live Next.js check also passed using the existing Quillfox sandbox fixture: authorization failures, real listing/detail retrieval, deterministic trial mismatch, and evidence preservation. Website claims were labeled fixtures; OpenAI was not called. No billing resources or credentials were changed.
