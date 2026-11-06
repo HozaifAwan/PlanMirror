@@ -76,7 +76,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
+| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
 | Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
@@ -265,6 +265,12 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 - **Two-minute recording sequence.** Spend 20 seconds showing Quillfox’s public-facing promise, 45 seconds running an authorized sandbox audit with AI extraction and showing the verified quote, 35 seconds inspecting a discrepancy and downloading its evidence, and 20 seconds running the labeled corrected sample. The corrected sample demonstrates the expected outcome using fixture data. Record the sandbox run with the token field masked and keep the final video under three minutes. [Devpost official rules](https://paypalaihackathon.devpost.com/rules)
 - **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
 
+
+## Audit orchestration integration
+
+The integration branch connects Ayaan's sandbox reader through `auditSandboxPlan` and a protected `POST /api/audits` route. It accepts normalized claims and returns explicit review results until the comparator is connected. See [the integration handoff](docs/audit-orchestration.md#integration-handoff-for-tomorrow) for Sujeeth and Nilanee's interfaces.
+
+Run `npm test` for both backend and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal transport. These checks use mock transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Real extraction, comparison, and dashboard integration remain pending.
 
 ## Team handoff
 
