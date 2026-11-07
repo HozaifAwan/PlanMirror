@@ -76,10 +76,10 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented, live credential test pending |
-| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Planned |
-| Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
-| Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
+| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
+| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Implemented for supplied text; live OpenAI verification pending |
+| Trial and price checks | Detect supported discrepancies with deterministic comparisons | Implemented; unsupported pricing requires review |
+| Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Implemented for compatible fixed-price terms |
 | Evidence and explanations | Show source quotes beside retrieved PayPal fields | Planned |
 | AG Studio dashboard | Filter and inspect findings and source evidence | Fixture foundation at `/studio`; live adapter and severity semantics remain open |
 | Custom Auditor agent | Answer questions grounded in retrieved audit evidence | Planned |
@@ -304,6 +304,14 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 - **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
 
 
+## Audit orchestration integration
+
+The integration connects Ayaan's sandbox reader through a protected `POST /api/audits` route. It accepts normalized claims or supplied pricing text plus a selected offer label. Both modes use the subscription comparison engine and preserve source evidence. Unsupported pricing and ambiguous trial phases require review. See [the integration guide](docs/audit-orchestration.md) for provider interfaces and comparison safeguards.
+
+Run `npm test` for backend, AI, comparison, and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal and OpenAI transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Live OpenAI extraction and dashboard integration remain unverified.
+
+Backend API limits and read-only verification instructions: [Backend request budgets](docs/backend-request-budgets.md).
+
 ## Team handoff
 
 Pull `main`, create a feature branch, and open your PR against `main`. Suggested paths in the table may need to be created. Coordinate changes to shared contracts with Hozaif before building against them.
@@ -316,6 +324,6 @@ Pull `main`, create a feature branch, and open your PR against `main`. Suggested
 | Nilanee | Business Logic & QA | `lib/audit/types.ts`, then add comparisons and tests under `lib/audit/` | Ayaan and Sujeeth on inputs and Sebastian on findings |
 | Sai | Frontend/UI | `app/page.tsx` and `app/globals.css`, then add the Quillfox pricing page under `app/quillfox/` | Sebastian on dashboard placement and Sujeeth on pricing copy |
 | Sebastian | AG Studio & Agent | `lib/audit/types.ts`, then add the dashboard, Mirror widget, and Auditor agent under `app/studio/` | Sai on layout, Nilanee on findings, and Sujeeth on source evidence |
-| Open | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
+| Ayaan | DevOps, Security & Demo | `.env.example` and `.github/workflows/checks.yml`, then own deployment and demo verification | Ayaan and Sujeeth on credentials and Hozaif on release readiness |
 
-Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *open role* verifies the complete flow with sandbox credentials and prepares the demo.
+Start by agreeing on the handoffs. Ayaan returns normalized PayPal plans, Sujeeth returns structured claims with source quotes, Nilanee compares those inputs and produces findings, and Sebastian renders the findings in the dashboard. Sai owns the merchant and audit screens. *Ayaan* verifies the complete flow with sandbox credentials and prepares the demo.

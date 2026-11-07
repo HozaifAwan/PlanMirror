@@ -1,0 +1,24 @@
+import { z } from "zod";
+import type { AdvertisedSubscriptionClaim, BillingInterval, Money } from "../audit/types";
+
+const moneySchema = z.object({ value: z.string().regex(/^\d+(\.\d+)?$/), currencyCode: z.string().regex(/^[A-Z]{3}$/) });
+const intervalSchema = z.object({ unit: z.enum(["DAY", "WEEK", "MONTH", "YEAR"]), count: z.number().int().positive() });
+const evidenceSchema = z.object({ url: z.string().url(), quote: z.string().min(1) });
+
+export const extractedClaimSchema = z.discriminatedUnion("field", [
+  z.object({ field: z.literal("trial"), offerLabel: z.string().min(1), evidence: evidenceSchema, duration: intervalSchema, price: moneySchema.nullable() }),
+  z.object({ field: z.literal("recurring_price"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema.nullable(), quotedInterval: intervalSchema, billedInterval: intervalSchema.nullable() }),
+  z.object({ field: z.literal("billing_interval"), offerLabel: z.string().min(1), evidence: evidenceSchema, interval: intervalSchema }),
+  z.object({ field: z.literal("setup_fee"), offerLabel: z.string().min(1), evidence: evidenceSchema, price: moneySchema.nullable() }),
+]);
+
+export const extractionResponseSchema = z.object({ status: z.enum(["ok", "needs_review"]), claims: z.array(extractedClaimSchema), reason: z.string().min(1).nullish() }).superRefine((value, ctx) => {
+  if (value.status === "needs_review" && !value.reason) ctx.addIssue({ code: "custom", message: "Review results require a reason." });
+});
+
+export type ExtractedClaim = z.infer<typeof extractedClaimSchema>;
+export type ExtractionResponse =
+  | { status: "ok"; claims: AdvertisedSubscriptionClaim[] }
+  | { status: "needs_review"; claims: []; reason: string };
+export type Claim = AdvertisedSubscriptionClaim;
+export type { BillingInterval, Money };

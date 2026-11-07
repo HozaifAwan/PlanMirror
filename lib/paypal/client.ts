@@ -17,7 +17,9 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
   }
   async function request(path: string, init: RequestInit) {
     try {
-      return await fetcher(origin + path, { ...init, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000) });
+      const timeout = AbortSignal.timeout(10000);
+      return await fetcher(origin + path, { ...init, cache: "no-store", redirect: "error",
+        signal: init.signal ? AbortSignal.any([init.signal, timeout]) : timeout });
     } catch { throw new PayPalError(502, "Cannot reach PayPal sandbox. Check DNS, network, or proxy settings."); }
   }
   async function json(response: Response): Promise<unknown> {
@@ -46,9 +48,12 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
     cached = pending;
     try { return await pending; } catch (e) { if (cached === pending) cached = undefined; throw e; }
   }
-  async function get(path: string) {
+  async function get(path: string, signal?: AbortSignal) {
     const t = await token();
-    const send = (value: string) => request(path, { headers: { Authorization: "Bearer " + value, Prefer: "return=representation" } });
+    const send = (value: string) => {
+      signal?.throwIfAborted();
+      return request(path, { signal, headers: { Authorization: "Bearer " + value, Prefer: "return=representation" } });
+    };
     let response = await send(t.value);
     if (response.status === 401) {
       if (cached && await cached === t) cached = undefined;
@@ -58,9 +63,9 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
       response.status === 404 ? "Sandbox plan not found." : "PayPal sandbox request failed.");
     return json(response);
   }
-  async function readPlan(id: string) {
+  async function readPlan(id: string, signal?: AbortSignal) {
     if (!planIdSchema.safeParse(id).success) throw new PayPalError(400, "Invalid plan ID.");
-    const data = await get("/v1/billing/plans/" + id);
+    const data = await get("/v1/billing/plans/" + id, signal);
     try {
       const plan = normalizePlan(data);
       if (plan.id !== id) throw new Error();
@@ -69,14 +74,33 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
   }
   async function listPlans(page = 1, pageSize = 20) {
     if (!Number.isInteger(page) || page < 1 || page > 100000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 20) throw new PayPalError(400, "Invalid pagination.");
-    const data = await get(`/v1/billing/plans?page=${page}&page_size=${pageSize}&total_required=true`);
-    const parsed = z.object({ plans: z.array(z.object({ id: planIdSchema })), total_items: z.number().int().nonnegative(), total_pages: z.number().int().nonnegative() }).safeParse(data);
-    if (!parsed.success) throw new PayPalError(502, "PayPal returned an invalid plan list.");
-    // Always retrieve details: list representations may omit fields required by the auditor.
-    const plans = [];
-    for (const item of parsed.data.plans) plans.push(await readPlan(item.id));
-    return { plans, page, pageSize, totalItems: parsed.data.total_items, totalPages: parsed.data.total_pages,
-      nextPage: page < parsed.data.total_pages ? page + 1 : null };
+    const signal = AbortSignal.timeout(30_000);
+    const timedOut = () => new PayPalError(504, "Sandbox plan listing took too long. Retry with a smaller page_size.");
+    let abort: () => void = () => {};
+    const deadline = new Promise<never>((_, reject) => {
+      abort = () => reject(timedOut());
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) abort();
+    });
+    try {
+      return await Promise.race([deadline, (async () => {
+        signal.throwIfAborted();
+        const data = await get(`/v1/billing/plans?page=${page}&page_size=${pageSize}&total_required=true`, signal);
+        const parsed = z.object({ plans: z.array(z.object({ id: planIdSchema })).max(pageSize), total_items: z.number().int().nonnegative(), total_pages: z.number().int().nonnegative() }).safeParse(data);
+        if (!parsed.success) throw new PayPalError(502, "PayPal returned an invalid plan list.");
+        // Always retrieve details, but keep the entire page within one deadline.
+        const plans = [];
+        for (const item of parsed.data.plans) plans.push(await readPlan(item.id, signal));
+        signal.throwIfAborted();
+        return { plans, page, pageSize, totalItems: parsed.data.total_items, totalPages: parsed.data.total_pages,
+          nextPage: page < parsed.data.total_pages ? page + 1 : null };
+      })()]);
+    } catch (error) {
+      if (signal.aborted) throw timedOut();
+      throw error;
+    } finally {
+      signal.removeEventListener("abort", abort);
+    }
   }
   return { readPlan, listPlans };
 }

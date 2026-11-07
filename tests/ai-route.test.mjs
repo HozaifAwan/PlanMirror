@@ -1,0 +1,59 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { POST } from '../app/api/ai/extract/route.ts';
+
+const sourceText = 'PlanMirror Pro — $9.99/month.';
+const claim = { field: 'recurring_price', offerLabel: 'PlanMirror Pro', evidence: { url: 'https://example.com/pricing', quote: '$9.99/month' }, price: { value: '9.99', currencyCode: 'USD' }, quotedInterval: { unit: 'MONTH', count: 1 }, billedInterval: { unit: 'MONTH', count: 1 } };
+const request = body => new Request('http://localhost/api/ai/extract', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+const authorizedRequest = body => { const r = request(body); r.headers.set('authorization', 'Bearer ' + 'a'.repeat(32)); return r; };
+
+test('rejects invalid extraction requests before calling OpenAI', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  const response = await POST(authorizedRequest({ sourceUrl: 'not-a-url', sourceText: '' }));
+  assert.equal(response.status, 400);
+});
+
+test('returns validated extraction results from the server route', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-key';
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ status: 'ok', claims: [claim] }) }] }] });
+  try {
+    const response = await POST(authorizedRequest({ sourceUrl: 'https://example.com/pricing', sourceText }));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).claims[0].price.value, '9.99');
+  } finally { globalThis.fetch = originalFetch; if (previousKey) process.env.OPENAI_API_KEY = previousKey; else delete process.env.OPENAI_API_KEY; }
+});
+
+test('maps missing OpenAI configuration to service unavailable', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  const previous = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  try { assert.equal((await POST(authorizedRequest({ sourceUrl: 'https://example.com/pricing', sourceText }))).status, 503); }
+  finally { if (previous) process.env.OPENAI_API_KEY = previous; }
+});
+
+test('rejects requests without authorization', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  assert.equal((await POST(request({ sourceUrl: 'https://example.com/pricing', sourceText }))).status, 401);
+});
+
+test('rejects non-HTTP sources, extra fields, oversized text and non-JSON requests before extraction', async () => {
+  process.env.PLANMIRROR_SANDBOX_READ_TOKEN = 'a'.repeat(32);
+  for (const body of [
+    { sourceUrl: 'file:///private', sourceText },
+    { sourceUrl: 'https://example.com', sourceText, apiKey: 'PRIVATE' },
+    { sourceUrl: 'https://example.com', sourceText: 'x'.repeat(20_001) },
+  ]) {
+    const result = await POST(authorizedRequest(body));
+    assert.equal(result.status, 400);
+    assert.equal(result.headers.get('cache-control'), 'no-store');
+    assert.equal(result.headers.get('x-content-type-options'), 'nosniff');
+  }
+  const wrongType = authorizedRequest({ sourceUrl: 'https://example.com', sourceText });
+  wrongType.headers.set('content-type', 'text/plain');
+  assert.equal((await POST(wrongType)).status, 415);
+  const oversized = authorizedRequest({ sourceUrl: 'https://example.com', sourceText: '漢'.repeat(12_000) });
+  assert.equal((await POST(oversized)).status, 413);
+});
