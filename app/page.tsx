@@ -1,3 +1,5 @@
+import ScrollAnimations from "./components/scroll-animations";
+
 const auditSteps = [
   { id: "advertised-offer", title: "Start with the promise.", label: "Advertised offer", detail: "Bring the exact subscription terms from your pricing page, FAQ, and offer copy." },
   { id: "paypal-plan", title: "Look behind the billing.", label: "PayPal billing plan", detail: "Retrieve the trial, price, and renewal cadence configured in your PayPal sandbox plan." },
@@ -7,6 +9,7 @@ const auditSteps = [
 export default function Home() {
   return (
       <main id="main-content" tabIndex={-1} aria-labelledby="hero-title" aria-describedby="workspace-status" data-testid="home-page">
+        <ScrollAnimations />
         <section className="pm-container pm-hero" aria-labelledby="hero-title">
           <p className="pm-eyebrow pm-secondary-surface">Subscription billing integrity</p>
           <h1 id="hero-title" className="pm-hero-title">See if your billing<br className="pm-desktop-break" /> matches your promise.</h1>
@@ -18,6 +21,26 @@ export default function Home() {
             </svg>
           </a>
           <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status" data-state="in-development">In development · Read-only sandbox auditing</p>
+          <figure className="pm-overview-preview" aria-labelledby="preview-title" aria-describedby="preview-note">
+            <div className="pm-preview-topline"><span className="pm-eyebrow">The promise meets the plan</span><span className="pm-preview-label">Illustrative sample</span></div>
+            <h2 id="preview-title">Small differences.<br />A clearer picture.</h2>
+            <div className="pm-preview-comparison">
+              <div className="pm-preview-card pm-preview-promise">
+                <p className="pm-preview-card-label">Advertised offer</p>
+                <p className="pm-preview-number">30{" "}<span>days free</span></p>
+                <p>Then USD 19 per month</p>
+                <span className="pm-preview-card-note">What your website promises</span>
+              </div>
+              <span className="pm-preview-connector" aria-hidden="true">↔</span>
+              <div className="pm-preview-card pm-preview-plan">
+                <p className="pm-preview-card-label">Configured billing</p>
+                <p className="pm-preview-number">7{" "}<span>days free</span></p>
+                <p>Then USD 24 per month</p>
+                <span className="pm-preview-card-note">What the sample plan contains</span>
+              </div>
+            </div>
+            <figcaption id="preview-note"><p><strong>23 fewer trial days. USD 5 more per month.</strong></p><p>Fictional values to explain the workflow. No live audit has run.</p></figcaption>
+          </figure>
         </section>
         {/* Sai owns merchant/audit screens; coordinate the dashboard handoff with Sebastian. */}
         <section id="workflow" className="pm-workflow" aria-labelledby="workflow-title">

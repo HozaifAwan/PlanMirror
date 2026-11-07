@@ -1,4 +1,4 @@
-// Compile the TypeScript modules with the installed compiler, then run both Node test suites.
+// Compile backend tests; run DOM tests against their original source and CSS files.
 import { mkdtempSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -12,7 +12,7 @@ try {
     "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node",
     "--rewriteRelativeImportExtensions", "--esModuleInterop", "--strict", "--skipLibCheck",
   ], { stdio: "inherit" });
-  const tests = readdirSync("tests").filter(name => name.endsWith(".test.mjs"));
+  const tests = readdirSync("tests").filter(name => name.endsWith(".test.mjs") && name !== "frontend.test.mjs");
   mkdirSync(join(output, "tests"));
   for (const name of tests) {
     writeFileSync(join(output, "tests", name),
@@ -24,6 +24,9 @@ try {
     join(output, "lib/orchestration/plan-audit.test.js"),
     join(output, "lib/orchestration/audit-request.test.js"),
   ], { stdio: "inherit" });
+  // Frontend tests load TSX components and styles directly from the source tree.
+  // Moving them into the compiled backend directory breaks those relative paths.
+  execFileSync(process.execPath, ["--import", "tsx", "--test", "tests/frontend.test.mjs"], { stdio: "inherit" });
 } finally {
   rmSync(output, { recursive: true, force: true });
 }
