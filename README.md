@@ -71,7 +71,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 
 ## Core features and build status
 
-**Implemented:** Next.js App Router shell, Tailwind styling, shared TypeScript contracts, and local development checks.
+**Implemented:** Next.js App Router shell, shared styles/contracts, sandbox backend, local checks, and a fixture-driven AG Studio foundation at `/studio`. Live audit orchestration, custom Mirror widget and Auditor agent are not connected on this branch.
 
 | Planned feature | Expected behavior | Status |
 | --- | --- | --- |
@@ -81,7 +81,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Planned |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Planned |
 | Evidence and explanations | Show source quotes beside retrieved PayPal fields | Planned |
-| AG Studio dashboard | Filter and inspect findings by plan, field, and severity | Planned |
+| AG Studio dashboard | Filter and inspect findings and source evidence | Fixture foundation at `/studio`; live adapter and severity semantics remain open |
 | Custom Auditor agent | Answer questions grounded in retrieved audit evidence | Planned |
 | Suggested corrections | Recommend human-reviewed changes without automatic writes | Planned |
 
@@ -152,6 +152,20 @@ npm run typecheck
 npm run build
 ```
 
+## Studio foundation
+
+Open `/studio` or choose **Studio** in the header. The page uses real AG Studio 3.1.0 with explicitly labeled, fictional fixture data; it makes no PayPal or OpenAI calls. Choose a sample scenario, filter by finding status/field, and use **Inspect** to open the evidence panel. **Accessible records** provides the nonvirtualized table and complete visible records. Reset filters to recover from empty results. Run status is independent of each financial verdict.
+
+Mixed findings covers the five README scenarios. Separate corrected, partial-evidence, simulated provider-failure, empty and no-audit samples expose uncertainty and recovery behavior. Sample URLs, plan IDs and timestamps are illustrative, not live retrieval evidence. **Download all evidence (JSON)** includes every finding and issue in the selected run even when visual filters are active; failed/not-started states have no exportable audit result.
+
+The fixture-only presentation envelope in `lib/studio/` wraps the shared `AuditFinding` without modifying financial rules. Configured/advertised strings are supplied by fixtures. A live adapter still needs agreement with Hozaif and Nilanee; never infer values from summaries. The evidence panel is ordinary React in this phase: the custom Mirror widget, cross-widget integration and grounded Auditor agent remain subsequent milestones.
+
+### Studio license and checks
+
+Set `AG_STUDIO_LICENSE_KEY` in your ignored local environment file and restart the development server. For a production build, set it before building and rebuild after changing it. The server page supplies it only to `AgStudioProvider`, following the [official license setup](https://www.ag-grid.com/studio/react/licence-install/). This is a browser SDK license: its runtime configuration reaches the browser, unlike server-only PayPal/OpenAI credentials. Keep it out of source, logs, evidence exports and Markdown. Do not silence license warnings; actual license validity must be checked in the running SDK. [Local evaluation and deployment requirements](https://www.ag-grid.com/studio/react/installation/).
+
+`ag-studio` and `ag-studio-react` are pinned to the same version. Native TypeScript tests require Node 22.18+ or 24 as described for the existing backend tests. Run `npm run test:frontend` for fixture/filter/export and DOM-based Markdown checks, followed by lint, typecheck and build. These tests do not establish live integration, financial correctness or browser SDK behavior.
+
 ## Project structure
 
 | Path | Purpose |
@@ -161,7 +175,9 @@ npm run build
 | `app/globals.css` | Tailwind entry point |
 | `lib/paypal/types.ts` | Normalized PayPal plans and billing cycles |
 | `lib/audit/types.ts` | Money, intervals, advertised claims, findings, and evidence |
-| `.env.example` | Empty server-side environment variable placeholders |
+| `.env.example` | Empty integration and Studio-license environment variable placeholders |
+| `app/studio/` | Fixture dashboard, AG Studio grid and evidence panel |
+| `lib/studio/` | Proposed fixture presentation types, scenarios, filters and export |
 
 The contracts preserve decimal amounts as strings and distinguish a quoted rate from the actual billing interval. Findings can require review when evidence is incomplete. Add runtime schemas and integration dependencies alongside the features that use them.
 
@@ -181,11 +197,11 @@ The contracts preserve decimal amounts as strings and distinguish a quoted rate 
 
 A robot button sits at the **right end of the footer row on every page**. It shares the footer’s existing row without an extra control strip. It stays in normal document flow and scrolls with the page; it is never fixed to the viewport. Activating **Markdown view** replaces the visual page with a compact, selectable Markdown snapshot of the currently rendered content. Activate it again to restore the website and its existing state. The view is read-only; return to the website to operate forms and controls. Navigation to another route restores the website view.
 
-This is a frontend requirement: preserve the shared `AgentView` wrapper in `app/layout.tsx` for all routes. The serializer in `lib/frontend/page-markdown.ts` reads the current DOM rather than a separately maintained copy. It preserves headings, readable text, link destinations, list order, tables and control descriptions; it excludes scripts, styles, hidden content, decorative icons and form values. It is a snapshot, not a complete export of offscreen/virtualized data or ongoing asynchronous updates. New widgets must expose their meaningful content in semantic HTML and verify the Markdown output; canvas-only charts need a text/table equivalent. Keep the view honest about filters, sample/live sources and unavailable features.
+This is a frontend requirement: preserve the shared `AgentView` wrapper in `app/layout.tsx` for all routes. The serializer in `lib/frontend/page-markdown.ts` reads the current DOM rather than a separately maintained copy. It preserves headings, readable text, link destinations, list order, tables and control descriptions; it excludes scripts, styles, hidden content, decorative icons and form values. It is a snapshot, not an automatic export of arbitrary offscreen/virtualized data or ongoing asynchronous updates. The Studio page supplies a complete semantic `data-markdown-only` equivalent for its current filtered findings and excludes the visual grid from serialization. This explicitly marked equivalent is included despite its CSS `display:none`; ordinary hidden/ARIA-hidden content and form values remain omitted. It reuses the evidence renderer and data rather than maintaining a second dataset. New widgets must expose their meaningful content in semantic HTML and verify the Markdown output; canvas-only charts need a text/table equivalent. Keep the view honest about filters, sample/live sources and unavailable features.
 
 The toggle has accessible name `Markdown view`, exposes `aria-pressed`, and uses `data-testid="agent-view-toggle"`. The output uses `data-testid="agent-markdown"`. Preserve keyboard activation, visible focus, bottom-right document placement at narrow widths, and a working return toggle. Never include credentials or filled sensitive inputs in Markdown or use it to bypass authorization.
 
-The current branch has a landing page with an explicitly labeled development state, shared semantic navigation and route loading/error/not-found boundaries. Audit forms, AG Studio and the Auditor agent remain future work here; this rule governs their implementation rather than claiming they already meet it. These hooks supplement accessible HTML and do not require a particular agent vendor, model, browser extension or custom agent API.
+The current branch has a landing page, a fixture-driven AG Studio page, shared semantic navigation and route loading/error/not-found boundaries. Live audit forms, the custom Mirror widget and the Auditor agent remain future work here; this rule governs their implementation rather than claiming they already meet it. These hooks supplement accessible HTML and do not require a particular agent vendor, model, browser extension or custom agent API.
 
 ## Team collaboration
 

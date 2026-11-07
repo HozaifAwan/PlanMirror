@@ -1,0 +1,390 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { pageMarkdown } from '../lib/frontend/page-markdown.ts';
+
+function snapshot(html) {
+  const dom = new JSDOM(html);
+  const previous = Object.fromEntries(['window', 'Node', 'HTMLElement'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  try {
+    for (const key of Object.keys(previous)) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
+    return pageMarkdown(dom.window.document.body);
+  } finally {
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    dom.window.close();
+  }
+}
+
+test('semantic alternative preserves every finding when virtualized grid is excluded', () => {
+  const markdown = snapshot(`<main><h1>Audit studio</h1><p>Sample data. Showing 2 of 5 findings.</p>
+    <div data-markdown-exclude><div>Only one virtualized row</div></div>
+    <section data-markdown-only style="display:none"><h2>Filtered findings</h2>
+      <table><tr><th>Claim</th><th>Advertised</th><th>Configured</th></tr><tr><td>trial</td><td>30 days</td><td>7 days</td></tr><tr><td>renewal</td><td>USD 19/month</td><td>USD 24/month</td></tr></table>
+      <p>Exact quote: Thirty days free.</p><a href="https://example.com/pricing">Pricing source</a><p>Plan P-FIXTURE, billingCycles[0], 2026-11-05T12:00:00Z</p>
+    </section></main>`);
+  for (const text of ['# Audit studio', 'Showing 2 of 5', '30 days', '7 days', 'USD 19/month', 'USD 24/month', 'Thirty days free.', 'https://example.com/pricing', 'P-FIXTURE', '2026-11-05T12:00:00Z']) assert.ok(markdown.includes(text), text);
+  assert.ok(!markdown.includes('Only one virtualized row'));
+  assert.match(markdown, /\| Claim \| Advertised \| Configured \|/);
+});
+
+test('ordinary hidden content, excluded controls and form values remain absent', () => {
+  const markdown = snapshot(`<main><script>privateScript()</script><p hidden>Hidden record</p><p aria-hidden="true">Decorative</p><p style="display:none">Filtered out</p>
+    <input aria-label="Audit token" type="password" value="secret-token"><textarea aria-label="Private question">private-input</textarea>
+    <button data-markdown-exclude>Markdown view</button><p>Visible result</p>
+    <section data-markdown-only hidden>Still hidden</section></main>`);
+  assert.ok(markdown.includes('Visible result'));
+  assert.ok(markdown.includes('password control: Audit token'));
+  for (const text of ['privateScript', 'Hidden record', 'Decorative', 'Filtered out', 'secret-token', 'private-input', 'Markdown view', 'Still hidden']) assert.ok(!markdown.includes(text), text);
+});
+
+test('hidden table rows do not reappear in a Markdown snapshot', () => {
+  const markdown = snapshot('<table><tr><th>Finding</th></tr><tr><td>Visible finding</td></tr><tr style="display:none"><td>Filtered finding</td></tr><tr aria-hidden="true"><td>Excluded finding</td></tr></table>');
+  assert.ok(markdown.includes('Visible finding'));
+  assert.ok(!markdown.includes('Filtered finding'));
+  assert.ok(!markdown.includes('Excluded finding'));
+});
+
+test('list ordering, links and closed detail contents are available without interaction', () => {
+  const markdown = snapshot('<ol><li>First finding</li><li><a href="#trial">Trial evidence</a></li></ol><details><summary>Additional evidence</summary><p>Collapsed content</p></details>');
+  assert.match(markdown, /1\. First finding/);
+  assert.match(markdown, /2\. \[Trial evidence\]\(<#trial>\)/);
+  assert.ok(markdown.includes('Collapsed content'));
+  assert.ok(!markdown.includes('[Details collapsed]'));
+});
+
+const { studioRuns } = await import('../lib/studio/fixtures.ts');
+const { visibleFindings, evidenceReport, safeEvidenceUrl } = await import('../lib/studio/types.ts');
+
+test('combined filters preserve finding identity and never narrow the full-run export', () => {
+  const run = studioRuns.find(run => run.findings.length >= 5);
+  const allIds = run.findings.map(record => record.id);
+  const filtered = visibleFindings(run, 'mismatch', 'trial');
+  assert.ok(filtered.length > 0);
+  assert.ok(filtered.every(record => record.finding.status === 'mismatch' && record.finding.field === 'trial'));
+  assert.equal(new Set(allIds).size, allIds.length);
+  const report = evidenceReport(run);
+  assert.equal(report.source, 'fixture');
+  assert.equal(report.illustrative, true);
+  assert.deepEqual(report.run.findings.map(record => record.id), allIds);
+  assert.deepEqual(visibleFindings(run, 'all', 'all').map(record => record.id), allIds);
+  assert.deepEqual(visibleFindings(run, 'match', 'setup_fee'), []);
+});
+
+test('review and failed fixtures retain uncertainty without fabricated conclusive evidence', () => {
+  const partial = studioRuns.find(run => run.findings.some(record => record.finding.status === 'needs_review' && !record.finding.paypal));
+  assert.equal(partial.status, 'needs_review');
+  assert.ok(partial.findings.some(record => !record.finding.website));
+  assert.ok(partial.issues.length > 0);
+  const failed = studioRuns.find(run => run.status === 'failed');
+  assert.deepEqual(failed.findings, []);
+  assert.ok(failed.issues.length > 0);
+  for (const run of studioRuns) {
+    assert.equal(run.source, 'fixture');
+    for (const record of run.findings) {
+      assert.ok(record.id.includes(run.id));
+      if (record.finding.status !== 'needs_review') {
+        assert.ok(record.finding.website?.quote);
+        assert.ok(record.finding.paypal?.fieldPath);
+      }
+    }
+  }
+});
+
+test('evidence navigation accepts only HTTP(S) sources', () => {
+  assert.equal(safeEvidenceUrl('https://example.com/pricing'), 'https://example.com/pricing');
+  for (const input of ['javascript:alert(1)', 'data:text/html,test', 'file:///tmp/private', '/unverified']) assert.equal(safeEvidenceUrl(input), undefined);
+});
+
+// Compile the production JSX with the project's TypeScript dependency, so the
+// regression exercises Evidence/StudioShell/AgentView rather than invented HTML.
+const { readFileSync, existsSync } = await import('node:fs');
+const { createRequire } = await import('node:module');
+const { resolve, dirname, extname } = await import('node:path');
+const ts = (await import('typescript')).default;
+const require = createRequire(import.meta.url);
+const componentCache = new Map();
+let currentPath = "/studio";
+function componentModule(path) {
+  path = resolve(path);
+  if (componentCache.has(path)) return componentCache.get(path).exports;
+  const componentEntry = { exports: {} };
+  componentCache.set(path, componentEntry);
+  const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
+  const localRequire = name => {
+    if (name === 'next/navigation') return { usePathname: () => currentPath };
+    if (name === 'next/link') return { __esModule: true, default: ({ children, onClick, ...props }) => React.createElement('a', { ...props, onClick: event => { event.preventDefault(); onClick?.(event); } }, children) };
+    if (name === 'next/dynamic') return { __esModule: true, default: () => () => 'Virtual grid placeholder' };
+    if (name.startsWith('.')) {
+      const target = resolve(dirname(path), name);
+      const entry = extname(target) ? target : ['.tsx', '.ts', '.js'].map(extension => target + extension).find(existsSync);
+      if (!entry) throw new Error(`Cannot resolve local component ${target}`);
+      return componentModule(entry);
+    }
+    return require(name);
+  };
+  new Function('require', 'module', 'exports', code)(localRequire, componentEntry, componentEntry.exports);
+  return componentEntry.exports;
+}
+const React = await import('react');
+const { renderToStaticMarkup } = await import('react-dom/server');
+const StudioMarkdown = componentModule('app/studio/studio-markdown.tsx').default;
+const studioCss = readFileSync(new URL('../app/studio/studio.css', import.meta.url), 'utf8');
+// JSDOM does not process Tailwind imports/theme directives; retain all real selectors.
+const globalCss = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8').replace(/@import[^;]+;/g, '').replace(/@theme\s*\{[^}]*\}/g, '');
+
+function studioSnapshot(run, status = 'all', field = 'all') {
+  return snapshot(`<style>${studioCss}</style><main class="studio-page">${renderToStaticMarkup(React.createElement(StudioMarkdown, { run, availableRuns: studioRuns, status, field, view: "accessible", selectedId: run.findings[0]?.id }))}</main>`);
+}
+const plain = value => value.replace(/([\\`*_[\]<>])/g, '\\$1');
+
+test('production Studio semantic evidence with real CSS includes the complete run under restrictive and empty filters', () => {
+  for (const run of studioRuns) {
+    for (const [status, field] of [['all', 'all'], ['mismatch', 'trial'], ['match', 'setup_fee']]) {
+      const markdown = studioSnapshot(run, status, field);
+      for (const value of [run.id, run.label, run.status, run.description, ...run.issues.map(issue => issue.message)]) assert.ok(markdown.includes(plain(value)), value);
+      assert.ok(markdown.includes(`Markdown includes all ${run.findings.length} findings`));
+      for (const record of run.findings) {
+        for (const value of [record.id, record.claimId, record.finding.offerLabel, record.finding.summary, record.advertisedDisplay, record.configuredDisplay, record.finding.recommendation, record.finding.website?.quote, record.finding.paypal?.planId, record.finding.paypal?.fieldPath, record.finding.paypal?.retrievedAt].filter(Boolean)) assert.ok(markdown.includes(plain(value)), value);
+        for (const reference of [record.finding.website, ...(record.additionalWebsiteEvidence ?? [])].filter(Boolean)) {
+          assert.ok(markdown.includes(plain(reference.quote)), reference.quote);
+          assert.ok(markdown.includes(reference.url), reference.url);
+        }
+        if (!record.finding.website) assert.ok(markdown.includes('Website evidence unavailable.'));
+        if (!record.finding.paypal) assert.ok(markdown.includes('PayPal evidence unavailable.'));
+      }
+    }
+  }
+});
+
+test('semantic opt-in cannot bypass inherited visibility or hidden descendants', () => {
+  const markdown = snapshot('<main><section style="visibility:hidden" data-markdown-only><p>Invisible semantic secret</p></section><section data-markdown-only style="display:none"><p>Public evidence</p><p hidden>Hidden semantic secret</p><p style="display:none">Hidden CSS secret</p><input value="secret-token" aria-label="Token"></section></main>');
+  assert.ok(markdown.includes('Public evidence'));
+  for (const value of ['Invisible semantic secret', 'Hidden semantic secret', 'Hidden CSS secret', 'secret-token']) assert.ok(!markdown.includes(value), value);
+});
+
+test('serializer accepts HTML belonging to another window and omits SVG contents', () => {
+  const foreign = new JSDOM('<main><p>Cross-window evidence</p><svg><text>Decorative SVG</text></svg></main>');
+  try {
+    const markdown = pageMarkdown(foreign.window.document.body);
+    assert.ok(markdown.includes('Cross-window evidence'));
+    assert.ok(!markdown.includes('Decorative SVG'));
+  } finally { foreign.window.close(); }
+});
+
+test('actual footer toggle captures production Studio evidence and returns to the website', async () => {
+  const dom = new JSDOM(`<html><head><style>${globalCss}\n${studioCss}</style></head><body><div id="root"></div></body></html>`, { url: 'http://localhost/studio' });
+  const keys = ['window', 'document', 'Node', 'HTMLElement', 'IS_REACT_ACT_ENVIRONMENT'];
+  const previous = Object.fromEntries(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  let root;
+  try {
+    for (const key of keys) Object.defineProperty(globalThis, key, { configurable: true, value: key === 'IS_REACT_ACT_ENVIRONMENT' ? true : dom.window[key] });
+    const { createRoot } = await import('react-dom/client');
+    const AgentView = componentModule('app/components/agent-view.tsx').default;
+    const StudioShell = componentModule('app/studio/studio-shell.tsx').default;
+    const AppShell = componentModule('app/components/app-shell.tsx').default;
+    root = createRoot(dom.window.document.getElementById('root'));
+    await React.act(async () => root.render(React.createElement(AgentView, { footer: 'PlanMirror footer' }, React.createElement(AppShell, { brand: React.createElement('a', { href: '/' }, 'PlanMirror') }, React.createElement(StudioShell)))));
+    const button = dom.window.document.querySelector('[data-testid="agent-view-toggle"]');
+    assert.ok(button.closest('footer'));
+    assert.equal(dom.window.document.querySelector('[data-testid="navigation-sidebar"]').dataset.expanded, "false");
+    await React.act(async () => button.click());
+    const markdown = dom.window.document.querySelector('#agent-markdown code').textContent;
+    for (const record of studioRuns.flatMap(run => run.findings)) {
+      assert.ok(markdown.includes(plain(record.id)), record.id);
+      assert.ok(markdown.includes(plain(record.finding.summary)), record.finding.summary);
+    }
+    assert.ok(markdown.includes('PlanMirror footer'));
+    for (const href of ['/', '/studio']) assert.ok(markdown.includes(`](<${href}>)`), href);
+    assert.ok(markdown.includes('Current route: /studio. Sidebar: icon rail.'));
+    assert.ok(markdown.includes(`Selected run ID: ${studioRuns[0].id}`));
+    assert.ok(markdown.includes(`Selected finding ID: ${plain(studioRuns[0].findings[0].id)}`));
+    assert.ok(markdown.includes('Current records view: grid'));
+    for (const run of studioRuns) {
+      assert.ok(markdown.includes(run.id));
+      for (const issue of run.issues) assert.ok(markdown.includes(plain(issue.message)));
+    }
+    assert.ok(!markdown.includes('Virtual grid placeholder'));
+    assert.ok(markdown.includes('[Button: Studio grid; pressed: true]'));
+    assert.ok(markdown.includes('Sample scenario'));
+    assert.ok(markdown.indexOf('All finding evidence') < markdown.indexOf('[Button: All findings'));
+    assert.equal(button.getAttribute('aria-pressed'), 'true');
+    await React.act(async () => button.click());
+    assert.equal(dom.window.document.querySelector('#agent-markdown'), null);
+    assert.equal(dom.window.document.querySelector('[data-testid="studio-page"]').closest('[hidden]'), null);
+    const mismatchButton = Array.from(dom.window.document.querySelectorAll('.studio-counts button')).find(node => node.textContent.includes('Mismatches'));
+    await React.act(async () => mismatchButton.click());
+    await React.act(async () => button.click());
+    const filteredMarkdown = dom.window.document.querySelector('#agent-markdown code').textContent;
+    assert.ok(filteredMarkdown.includes('Website filter scope: 2 of 5 findings'));
+    assert.ok(filteredMarkdown.includes('Included in current website filters: No.'));
+    for (const record of studioRuns[0].findings) assert.ok(filteredMarkdown.includes(plain(record.finding.summary)));
+    await React.act(async () => button.click());
+    assert.equal(mismatchButton.getAttribute('aria-pressed'), 'true');
+  } finally {
+    if (root) await React.act(async () => root.unmount());
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    dom.window.close();
+  }
+});
+
+
+test('flagged sensitive content and nested pre/table secrets are withheld without interaction', () => {
+  const markdown = snapshot(`<main><details><summary>Closed disclosure</summary><p>Available detail</p><p data-agent-sensitive data-agent-label="Account credential">secret-disclosure</p></details>
+    <pre>public code<span hidden>secret-hidden-pre</span><span data-agent-sensitive aria-label="Private token">secret-pre</span><input aria-label="Token input" value="secret-input"><script>secret-script</script></pre>
+    <table><thead><tr><th>Evidence</th></tr></thead><tbody hidden><tr><td>secret-hidden-table</td></tr></tbody><tbody data-agent-sensitive data-agent-label="Private account rows"><tr><td>secret-table-group</td></tr></tbody><tbody><tr><td>Public row <span data-agent-sensitive>secret-table-cell</span></td></tr><tr data-agent-sensitive><td>secret-table-row</td></tr></tbody></table>
+    <section data-agent-sensitive data-agent-label="License"><pre>secret-license</pre></section></main>`);
+  for (const value of ['Available detail', 'public code', 'Public row', 'Sensitive information withheld: Account credential', 'Sensitive information withheld: Private token', 'Sensitive information withheld: Private account rows', 'Sensitive information withheld: sensitive content', 'Sensitive information withheld: License']) assert.ok(markdown.includes(value), value);
+  assert.ok(!markdown.includes('secret-'));
+});
+
+
+test('ordinary controls describe public options and button states without filled values', () => {
+  const markdown = snapshot('<main><button aria-pressed="true" aria-expanded="false" aria-selected="true">Audit controls</button><select aria-label="Scenario"><option value="private-value">Public sample</option><optgroup hidden><option>Hidden sample</option></optgroup><optgroup data-agent-sensitive><option>Private sample</option></optgroup></select></main>');
+  for (const value of ['pressed: true', 'expanded: false', 'selected: true', 'available options: Public sample', 'value omitted', 'Sensitive information withheld: sensitive content']) assert.ok(markdown.includes(value), value);
+  for (const value of ['private-value', 'Hidden sample', 'Private sample']) assert.ok(!markdown.includes(value), value);
+});
+
+
+test('captions survive while sensitive and hidden label descendants never become control labels', () => {
+  const markdown = snapshot('<main><label>Public label<span data-agent-sensitive>secret-label</span><span hidden>secret-hidden-label</span><input value="secret-control"></label><table><caption>Public evidence caption</caption><tbody><tr><td>Evidence row</td></tr></tbody><tfoot data-markdown-exclude><tr><td>secret-footer</td></tr></tfoot></table></main>');
+  assert.ok(markdown.includes('Public evidence caption'));
+  assert.ok(markdown.includes('control: Public label'));
+  assert.ok(markdown.includes('Sensitive information withheld: sensitive content'));
+  assert.ok(!markdown.includes('secret-'));
+});
+
+test('icon sidebar expands on hover and focus, collapses on leave and selection, and supports Escape', async () => {
+  const dom = new JSDOM(`<html><head><style>${globalCss}</style></head><body><div id="root"></div></body></html>`, { url: 'http://localhost/studio' });
+  const keys = ['window', 'document', 'Node', 'HTMLElement', 'IS_REACT_ACT_ENVIRONMENT'];
+  const previous = Object.fromEntries(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  let root;
+  currentPath = '/studio';
+  try {
+    for (const key of keys) Object.defineProperty(globalThis, key, { configurable: true, value: key === 'IS_REACT_ACT_ENVIRONMENT' ? true : dom.window[key] });
+    const { createRoot } = await import('react-dom/client');
+    const AppShell = componentModule('app/components/app-shell.tsx').default;
+    root = createRoot(dom.window.document.getElementById('root'));
+    const render = () => root.render(React.createElement(AppShell, { brand: React.createElement('a', { href: '/' }, 'PlanMirror') }, React.createElement('main', { id: 'main-content', tabIndex: -1 }, React.createElement('h1', null, 'Studio'))));
+    await React.act(async () => render());
+    const sidebar = dom.window.document.querySelector('[data-testid="navigation-sidebar"]');
+    const shell = dom.window.document.querySelector('[data-testid="app-shell"]');
+    const links = sidebar.querySelectorAll('a');
+    assert.equal(dom.window.document.querySelector('[data-testid="navigation-toggle"]'), null);
+    assert.equal(sidebar.hidden, false);
+    assert.equal(sidebar.dataset.expanded, 'false');
+    assert.deepEqual(Array.from(links, link => link.getAttribute('aria-label')), ['Overview', 'AG Studio']);
+    assert.equal(dom.window.getComputedStyle(shell).gridTemplateColumns, '4rem minmax(0, 1fr)');
+    assert.equal(links[1].getAttribute('aria-current'), 'page');
+    await React.act(async () => sidebar.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true })));
+    assert.equal(sidebar.dataset.expanded, 'true');
+    await React.act(async () => sidebar.dispatchEvent(new dom.window.MouseEvent('mouseout', { bubbles: true, relatedTarget: dom.window.document.body })));
+    assert.equal(sidebar.dataset.expanded, 'false');
+    await React.act(async () => links[0].focus());
+    assert.equal(sidebar.dataset.expanded, 'true');
+    await React.act(async () => links[1].focus());
+    assert.equal(sidebar.dataset.expanded, 'true');
+    await React.act(async () => links[1].dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    assert.equal(sidebar.dataset.expanded, 'false');
+    assert.equal(dom.window.document.activeElement.id, 'main-content');
+    await React.act(async () => links[1].focus());
+    await React.act(async () => links[1].click());
+    assert.equal(sidebar.dataset.expanded, 'false');
+    assert.equal(dom.window.document.activeElement.id, 'main-content');
+    await React.act(async () => links[0].focus());
+    await React.act(async () => dom.window.document.getElementById('main-content').focus());
+    assert.equal(sidebar.dataset.expanded, 'false');
+    await React.act(async () => sidebar.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true })));
+    currentPath = '/';
+    await React.act(async () => render());
+    assert.equal(sidebar.dataset.expanded, 'false');
+    assert.equal(links[0].getAttribute('aria-current'), 'page');
+    // Mobile reflow needs browser QA; JSDOM has no responsive layout engine.
+  } finally {
+    if (root) await React.act(async () => root.unmount());
+    currentPath = '/studio';
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    dom.window.close();
+  }
+});
+
+
+test('Overview sample comparison remains complete in the agent snapshot without animation or interaction', () => {
+  const Home = componentModule('app/page.tsx').default;
+  const html = renderToStaticMarkup(React.createElement(Home));
+  const markdown = snapshot(`<style>${globalCss}</style>${html}`);
+  for (const value of ['Advertised offer', 'Configured billing', '30 days free', '7 days free', 'USD 19 per month', 'USD 24 per month', '23 fewer trial days', 'USD 5 more per month', 'Illustrative sample', 'No live audit has run.']) assert.ok(markdown.includes(value), value);
+  assert.ok(!markdown.includes('↔'));
+  const dom = new JSDOM(html);
+  assert.equal(dom.window.document.querySelectorAll('h1').length, 1);
+  const ids = Array.from(dom.window.document.querySelectorAll('[id]'), node => node.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const link of dom.window.document.querySelectorAll('a[href^="#"]')) assert.ok(dom.window.document.getElementById(link.getAttribute('href').slice(1)));
+  dom.window.close();
+});
+
+test('scroll motion starts at rest, follows position in both directions and respects reduced motion', async () => {
+  const dom = new JSDOM('<div id="root"></div><section class="pm-hero"><figure class="pm-overview-preview"></figure></section>');
+  const keys = ['window', 'document', 'Node', 'HTMLElement', 'IS_REACT_ACT_ENVIRONMENT'];
+  const previous = Object.fromEntries(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  let root;
+  let pending;
+  let preferenceChanged;
+  const preference = { matches: false, addEventListener: (_, callback) => { preferenceChanged = callback; }, removeEventListener: () => {} };
+  dom.window.matchMedia = () => preference;
+  dom.window.requestAnimationFrame = callback => { pending = callback; return 1; };
+  dom.window.cancelAnimationFrame = () => { pending = undefined; };
+  Object.defineProperty(dom.window, 'innerHeight', { value: 1000 });
+  const hero = dom.window.document.querySelector('.pm-hero');
+  const preview = dom.window.document.querySelector('.pm-overview-preview');
+  preview.getBoundingClientRect = () => ({ top: 1200 - dom.window.scrollY });
+  const remaining = element => Number(element.style.getPropertyValue('--pm-scroll-remaining'));
+  const scrollTo = position => {
+    dom.window.scrollY = position;
+    dom.window.dispatchEvent(new dom.window.Event('scroll'));
+    const callback = pending;
+    pending = undefined;
+    callback();
+  };
+  try {
+    for (const key of keys) Object.defineProperty(globalThis, key, { configurable: true, value: key === 'IS_REACT_ACT_ENVIRONMENT' ? true : dom.window[key] });
+    const { createRoot } = await import('react-dom/client');
+    root = createRoot(dom.window.document.getElementById('root'));
+    const ScrollAnimations = componentModule('app/components/scroll-animations.tsx').default;
+    await React.act(async () => root.render(React.createElement(ScrollAnimations)));
+    assert.equal(remaining(hero), 1);
+    assert.equal(remaining(preview), 1);
+    scrollTo(120);
+    assert.equal(remaining(hero), 0.5);
+    scrollTo(600);
+    assert.equal(remaining(preview), 0.5);
+    scrollTo(850);
+    assert.equal(remaining(preview), 0);
+    scrollTo(0);
+    assert.equal(remaining(hero), 1);
+    assert.equal(remaining(preview), 1);
+    preference.matches = true;
+    preferenceChanged();
+    pending();
+    assert.equal(remaining(hero), 0);
+    assert.equal(remaining(preview), 0);
+    await React.act(async () => root.unmount());
+    root = undefined;
+    assert.equal(hero.style.getPropertyValue('--pm-scroll-remaining'), '');
+  } finally {
+    if (root) await React.act(async () => root.unmount());
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    dom.window.close();
+  }
+});

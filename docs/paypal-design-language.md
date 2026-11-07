@@ -252,7 +252,7 @@ The implementation adds a skip link, named navigation landmark, top-level header
 
 Validate normal text at least 4.5:1 and large text at least 3:1; check meaningful UI boundaries/focus at 3:1 against adjacent colors. These numeric acceptance targets are PlanMirror's WCAG-oriented QA choices, not measurements of PayPal's conformance. Alpha text must be composited: `#000000a1` resolves differently on white and light blue. Do not put normal-size white text on the light-blue workflow fill.
 
-Reduced-motion preference disables transitions and animation. The earlier entrance animation is removed; no content starts transparent or translated, and comprehension does not depend on motion. Use browser zoom and text enlargement; preserve focus and visible text labels rather than relying on color or icons alone.
+Reduced-motion preference disables transitions and animation. The earlier no-entrance-motion baseline is superseded for Overview by the November 6 user-requested motion revision below; essential content remains available without animation and never starts transparent. Use browser zoom and text enlargement; preserve focus and visible text labels rather than relying on color or icons alone.
 
 ### Implementation and review checklist
 
@@ -276,3 +276,49 @@ Before claiming a release is visually verified:
 - Parsed generated production HTML: one H1, English document language, and every in-page anchor has an existing destination.
 - Calculated WCAG relative-luminance ratios after alpha compositing: muted text on white 6.48:1, muted text on light blue 5.17:1, white on primary black 21:1, focus blue on white 4.98:1. The light-blue-surface focus override avoids the original 2.77:1 combination.
 - No screenshot, viewport/reflow, interactive keyboard or computed-style browser checks were possible because the browser host was unavailable. No live API checks or deployment were performed for this presentation-only update.
+
+## Findings tables and on-demand filters — November 5, 2026
+
+This extends the PayPal-inspired visual system with established data-table interaction patterns. These table dimensions and interactions are **PlanMirror choices**, not undocumented PayPal requirements.
+
+### Research references and decisions
+
+- [Carbon data-table guidelines](https://www.carbondesignsystem.com/building-blocks/core/components/data-table/guidelines) place search, filtering, actions and settings in the table toolbar. They offer several densities, including a 48px large row/header option. We adopt the toolbar organization and consistent density; we do not import Carbon's brand styling or claim PayPal uses Carbon.
+- [AG Studio modes and layout](https://www.ag-grid.com/studio/react/modes-layout/) documents separate view/edit panel configuration. PlanMirror explicitly disables the built-in left/right panels in view mode and supplies its own on-demand filter controls. This removes the sidebar through the supported API, rather than hiding SDK DOM with CSS.
+- [AG Studio theming](https://www.ag-grid.com/studio/react/theming/) is the implementation reference for SDK styling. Confirm parameters against the installed version's exported types; use supported theme values rather than broad `.ag-*` overrides.
+
+### Table appearance
+
+The table should read as a calm, aligned set of evidence records, not a stack of boxed cells. Use white rows with a faint alternating wash, a lightly tinted header, fine horizontal rules and no prominent vertical grid. Use a restrained blue hover treatment without making hover the only indicator of selection. A readable status label accompanies any colored status badge.
+
+Target 48px header/body rows, 14px body text, 13px bold headers and 14–16px horizontal cell padding. These are application density targets; allow wrapped content and contained horizontal scrolling when needed rather than shrinking text to fit. Use tabular numerals for displayed billing amounts and preserve currency/cadence labels. Keep the five visible columns focused on Inspect, field, status, advertised and configured values; summaries, quotes and long identifiers belong in the evidence detail. Complete values remain available through the accessible records view and evidence export.
+
+Inspect is a compact row action, not a primary page CTA: about 30px high on desktop, with a 44px target for coarse pointers. Keep visible keyboard focus. Apply the same neutral header, spacing, row borders, status treatment and hover vocabulary to the accessible HTML table. Styling must not remove native table header relationships or replace values with color alone.
+
+### Filter interaction
+
+Use a single **Filters** button in the findings toolbar. It reports the number of active status/field filters and opens a compact disclosure above the table. This is not a permanent sidebar and does not reserve horizontal canvas space when closed. The panel contains labeled status/field controls plus reset and close actions. Status-count tiles remain shortcuts into the same filter state.
+
+The button exposes `aria-expanded` and `aria-controls`; closed contents are hidden and not keyboard-focusable. Escape closes an open panel and returns focus to its trigger. Keep active scope readable when the panel is closed, and retain zero-result recovery. Filters apply to both grid and accessible records; export remains all findings in the selected run. Changing scenario resets filter state and selection must stay tied to a visible finding.
+
+Markdown must retain the active scope, complete visible evidence and run issues even when the filter disclosure is closed; a hidden control panel is not the source of truth for the snapshot. Do not enable an independent SDK filter sidebar alongside the application filters, because it would introduce competing scope and counts.
+
+### Verification boundary
+
+Check the filter button's expanded/control relationship, hidden panel semantics, clear/reset behavior, selection after filtering, and keyboard close/focus return. Check table overflow, headers, row height, status text and compact actions in the running browser when available. A build and theme typecheck verify integration syntax, not final rendered appearance or keyboard behavior.
+
+### Current Studio layout override
+
+At Sebastian’s request, findings span the full page content width, with evidence beneath rather than beside the table. Advertised/configured evidence is side by side on wider screens and stacks at 640px and below. This supersedes the earlier split-workspace arrangement.
+
+### Transparent brand variants
+
+The original PNGs contain an off-white background despite their PNG format. The header/footer now use `planmirror-logo-transparent.png` and `planmirror-wordmark-transparent.png`, generated with the built-in image editor using background-extraction prompts. The original PNGs are retained. Verified RGBA output includes fully transparent pixels; these are generated cutouts, not guaranteed pixel-identical edits. The wordmark display uses centered cover framing at its prior display size to compensate for added canvas padding.
+
+## Overview motion revision — November 6, 2026
+
+Sebastian requested animation on Overview using PayPal's existing design language. Rechecked the [PayPal US homepage](https://www.paypal.com/us/home) and [Pentagram's PayPal identity case study](https://www.pentagram.com/work/paypal/story). The latter describes a black/white foundation, blue accents and motion based on everyday payment gestures. The previously recorded hosted theme/hero CSS URLs could not be retrieved through the web tool in this check, so their earlier values were not independently reverified. This update uses the existing local tokens and independent CSS; exact durations/easing are PlanMirror choices, not claimed PayPal specifications.
+
+Overview now includes a semantic, explicitly fictional advertised-versus-configured comparison: 30 versus 7 free days and USD 19 versus USD 24 monthly. Its caption explains the illustrative differences and that no live audit has run. All values and context are ordinary HTML and included in the agent snapshot without interaction; the connecting arrow is decorative. This does not run or replace the comparison engine.
+
+Motion consists of short vertical text arrivals, two inward card slides with slight rotation, CTA arrow feedback/press response and pointer-hover workflow-card lift. Every animation is finite (at most 850 ms, ending within 1.1 seconds including delay), runs only with `prefers-reduced-motion: no-preference`, and changes transforms rather than hiding text. There is no scroll/JavaScript dependency, autoplay loop or essential animated-only meaning. Reduced-motion users receive the complete static page. The preview stacks on narrow screens, retaining the existing responsive shell and footer robot.

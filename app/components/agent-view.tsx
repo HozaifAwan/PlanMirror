@@ -24,7 +24,7 @@ export default function AgentView({ children, footer }: { children: ReactNode; f
         {enabled && (
           <main id="agent-markdown" className="pm-markdown-view" aria-label="Page content as Markdown" data-testid="agent-markdown">
             <h1 className="pm-markdown-title">Markdown view</h1>
-            <p className="pm-markdown-note">Read-only snapshot. Use the robot button to return to the website.</p>
+            <p className="pm-markdown-note">Read-only snapshot of complete supplied page data. Sensitive information and filled control values are withheld. Use the robot button to return to the website.</p>
             <pre tabIndex={0} aria-label="Markdown page content"><code>{snapshot.markdown}</code></pre>
           </main>
         )}
