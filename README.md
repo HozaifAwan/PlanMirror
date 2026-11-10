@@ -4,6 +4,20 @@
 
 **AI-Powered Subscription Billing Integrity Auditor**
 
+### Interactive audit workspace
+
+Studio now opens with a native verdict donut, a billing-field × verdict pivot matrix, and the findings table. Click a chart verdict to filter the linked workspace, then use Inspect to read the original advertised/configured evidence below. Native Studio filters are available from its filters panel. Counts represent recorded findings, not estimated losses or risk scores; missing evidence remains unavailable.
+
+Customize dashboard exposes Studio's data and compose panels for adding, resizing, and rearranging widgets over the selected run. These are presentation changes only. Reset workspace restores the original views and clears Studio filters. Customizations reset on a run or page-filter change. Accessible records, complete Markdown evidence, and full-run JSON export remain available independently of chart selections. The floating page guide is separate from the deferred Studio Agent Framework integration.
+
+### Floating page guide
+
+The current tab remembers up to 40 chat messages across refreshes and navigation using session storage. Each AI reply receives the latest six conversation messages and a fresh snapshot of the current page; old page snapshots are not saved.
+
+The check bot uses fixed PlanMirror instructions plus the current page's sanitized Markdown and up to six recent messages. Add `OPENAI_API_KEY` to `.env.local` and restart Next.js to enable AI replies (rebuild first for production, since static pages capture the enablement flag at build time). The key stays on the server. Without a key, the bot remains visibly labeled as a scripted preview. Chat sends the question, recent conversation, and sanitized page snapshot to OpenAI only when you send a message.
+
+The default chat model is `gpt-5.6-luna` with reasoning disabled and a 600-token output limit; override it using the server-only `PLANMIRROR_CHAT_MODEL` variable if your API account needs a different compatible model. Edit `lib/ai/check-bot.ts` to change the fixed project guide. Chat has no tools and cannot run audits or change billing settings. It explains the page evidence; financial verdicts still come from the deterministic comparator. Chat has a separate process-local demo budget of 10 provider calls/minute and two concurrent calls. This budget is not a durable, cross-instance spend cap.
+
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
 > **Start on `main`.** This branch contains the runnable team starter and shared types. The sections below describe the project design and the prototype on [`backup-mvp`](https://github.com/HozaifAwan/hackathon-project/tree/backup-mvp). Demo controls and integration examples refer to that branch. See [Team handoff](#team-handoff) for your starting files.

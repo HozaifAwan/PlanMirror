@@ -1,10 +1,11 @@
 /** Read the page and explicit semantic alternatives; omit hidden content and form values. */
-export function pageMarkdown(root: HTMLElement): string {
+export function pageMarkdown(root: HTMLElement, options: { hiddenViewRoot?: boolean } = {}): string {
   const text = (value: string) => value.replace(/\s+/g, " ").replace(/([\\`*_[\]<>])/g, "\\$1");
   function readable(node: HTMLElement): boolean {
-    if (node.hidden || node.getAttribute("aria-hidden") === "true" || node.hasAttribute("data-markdown-exclude")) return false;
+    const viewRoot = node === root && options.hiddenViewRoot;
+    if ((!viewRoot && node.hidden) || node.getAttribute("aria-hidden") === "true" || node.hasAttribute("data-markdown-exclude")) return false;
     const style = node.ownerDocument.defaultView!.getComputedStyle(node);
-    return style.visibility !== "hidden" && style.visibility !== "collapse" && (node.hasAttribute("data-markdown-only") || style.display !== "none");
+    return style.visibility !== "hidden" && style.visibility !== "collapse" && (viewRoot || node.hasAttribute("data-markdown-only") || style.display !== "none");
   }
   function render(node: Node | null, raw = false): string {
     if (!node) return "";
