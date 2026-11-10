@@ -37,8 +37,9 @@ test('real Studio harness delegates to the built-in data agent and executes nati
   try {
     sdk = createStudio(document.getElementById('studio'), { data: workspaceData(run.findings), initialState: initial, widgets, onErrorRaised: event => sdkErrors.push(...event.errorDetails) }, { modules: [AgStudioAiModule] });
     assert.ok(sdk.getAiContext().catalogue().some(widget => widget.type === 'planmirror-evidence' || widget.id === 'planmirror-evidence'), 'registered custom widget is available in the actual SDK catalogue');
-    console.log('QUERY SCHEMA', JSON.stringify(sdk.getAiTools().executeQuery().schema().parameters));
-    console.log('CONFIG SIZE', JSON.stringify(sdk.getAiTools().configureWidget({ widgetType: 'bar-chart-grouped' }, { pageId: 'findings' }).schema().parameters).length);
+    assert.ok(sdk.getAiTools().executeQuery().schema()?.parameters, 'native query tool exposes its parameter schema');
+    // configureWidget schemas depend on matching widgets in the current page.
+    // This evidence-only fixture has no grouped bar chart to configure.
     globalThis.fetch = async (_url, options) => {
       const body = JSON.parse(options.body);
       if (!body.request) return Response.json({ budgetId: 'mock-server-issued-budget' });

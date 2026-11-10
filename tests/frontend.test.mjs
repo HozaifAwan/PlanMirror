@@ -116,9 +116,10 @@ function componentModule(path) {
   componentCache.set(path, componentEntry);
   const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const localRequire = name => {
+    const portablePath = path.replaceAll('\\', '/');
     if (name === 'server-only') return {};
-    if (path.endsWith('/app/components/check-bot.tsx') && name === './check-bot-actions') return { askCheckBot: (...args) => checkBotActionMock(...args) };
-    if (path.endsWith('/app/audit/audit-form.tsx') && name === './actions') return {
+    if (portablePath.endsWith('/app/components/check-bot.tsx') && name === './check-bot-actions') return { askCheckBot: (...args) => checkBotActionMock(...args) };
+    if (portablePath.endsWith('/app/audit/audit-form.tsx') && name === './actions') return {
       listSandboxPlans: (...args) => auditActionsMock.listSandboxPlans(...args),
       runPlanAudit: (...args) => auditActionsMock.runPlanAudit(...args),
     };
