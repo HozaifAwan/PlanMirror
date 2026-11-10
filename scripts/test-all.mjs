@@ -12,7 +12,8 @@ try {
     "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node",
     "--rewriteRelativeImportExtensions", "--esModuleInterop", "--strict", "--skipLibCheck",
   ], { stdio: "inherit" });
-  const tests = readdirSync("tests").filter(name => name.endsWith(".test.mjs") && name !== "frontend.test.mjs");
+  const sourceTests = ["frontend.test.mjs", "studio-adapter.test.mjs", "check-bot-mock.test.mjs", "check-bot-ai.test.mjs", "studio-workflow.test.mjs", "studio-workspace.test.mjs", "studio-agent.test.mjs", "studio-harness.test.mjs"];
+  const tests = readdirSync("tests").filter(name => name.endsWith(".test.mjs") && !sourceTests.includes(name));
   mkdirSync(join(output, "tests"));
   for (const name of tests) {
     writeFileSync(join(output, "tests", name),
@@ -26,7 +27,7 @@ try {
   ], { stdio: "inherit" });
   // Frontend tests load TSX components and styles directly from the source tree.
   // Moving them into the compiled backend directory breaks those relative paths.
-  execFileSync(process.execPath, ["--import", "tsx", "--test", "tests/frontend.test.mjs"], { stdio: "inherit" });
+  execFileSync(process.execPath, ["--import", "tsx", "--test", ...sourceTests.map(name => `tests/${name}`)], { stdio: "inherit" });
 } finally {
   rmSync(output, { recursive: true, force: true });
 }

@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-      <AgentView footer={<>
+      <AgentView aiEnabled={Boolean(process.env.OPENAI_API_KEY?.trim())} footer={<>
         <span className="pm-wordmark"><Image src="/assets/planmirror-wordmark-transparent.png" alt="PlanMirror" width={2170} height={725} className="pm-brand-wordmark" /></span>
         <p>An auditing aid, not a legal-compliance certification.</p>
       </>}>

@@ -1,9 +1,10 @@
+import Link from "next/link";
 import ScrollAnimations from "./components/scroll-animations";
 
 const auditSteps = [
-  { id: "advertised-offer", title: "Start with the promise.", label: "Advertised offer", detail: "Bring the exact subscription terms from your pricing page, FAQ, and offer copy." },
-  { id: "paypal-plan", title: "Look behind the billing.", label: "PayPal billing plan", detail: "Retrieve the trial, price, and renewal cadence configured in your PayPal sandbox plan." },
-  { id: "audit-findings", title: "See where they differ.", label: "Audit findings", detail: "Inspect matches, discrepancies, and terms that need review, with evidence from both sources." },
+  { id: "advertised-offer", title: "Start with the promise.", label: "Advertised offer", detail: "Open Quillfox pricing and FAQ to see the exact subscription terms being audited." },
+  { id: "paypal-plan", title: "Look behind the billing.", label: "PayPal billing plan", detail: "Choose a PayPal sandbox plan and run a read-only audit without exposing secrets in the browser." },
+  { id: "audit-findings", title: "See where they differ.", label: "Audit findings", detail: "Inspect matches, discrepancies, and terms that need review in AG Studio, with evidence from both sources." },
 ];
 
 export default function Home() {
@@ -14,13 +15,15 @@ export default function Home() {
           <p className="pm-eyebrow pm-secondary-surface">Subscription billing integrity</p>
           <h1 id="hero-title" className="pm-hero-title">See if your billing<br className="pm-desktop-break" /> matches your promise.</h1>
           <p className="pm-hero-copy">Your pricing page makes a promise. PlanMirror helps you check that your PayPal billing plan keeps it.</p>
-          <a href="#workflow" className="pm-primary-action">
-            Explore the workflow
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
-              <path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
-          <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status" data-state="in-development">In development · Read-only sandbox auditing</p>
+          <div className="pm-hero-actions">
+            <Link href="/quillfox" className="pm-primary-action">
+              View Quillfox pricing
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+                <path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </div>
+          <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status" data-state="demo-ready">Demo ready · Read-only sandbox auditing</p>
           <figure className="pm-overview-preview" aria-labelledby="preview-title" aria-describedby="preview-note">
             <div className="pm-preview-topline"><span className="pm-eyebrow">The promise meets the plan</span><span className="pm-preview-label">Illustrative sample</span></div>
             <h2 id="preview-title">Small differences.<br />A clearer picture.</h2>
@@ -42,13 +45,12 @@ export default function Home() {
             <figcaption id="preview-note"><p><strong>23 fewer trial days. USD 5 more per month.</strong></p><p>Fictional values to explain the workflow. No live audit has run.</p></figcaption>
           </figure>
         </section>
-        {/* Sai owns merchant/audit screens; coordinate the dashboard handoff with Sebastian. */}
         <section id="workflow" className="pm-workflow" aria-labelledby="workflow-title">
           <div className="pm-container">
             <div className="pm-section-heading">
               <p className="pm-eyebrow">How it works</p>
               <h2 id="workflow-title" className="pm-section-title">One offer. Both sides of the story.</h2>
-              <p>Follow the promise from your website to your billing configuration.</p>
+              <p>Follow the promise from Quillfox to your PayPal sandbox configuration.</p>
             </div>
             <ol className="pm-step-grid" aria-labelledby="workflow-title" data-testid="audit-workflow">
               {auditSteps.map(({ id, title, label, detail }, index) => (
@@ -60,7 +62,11 @@ export default function Home() {
                 </li>
               ))}
             </ol>
-            <p className="pm-caption pm-workflow-note">Workflow preview. Audit tools are still in development.</p>
+            <div className="pm-merchant-actions pm-workflow-actions">
+              <Link className="pm-primary-action" href="/quillfox#audit">Run an audit</Link>
+              <Link className="pm-secondary-action" href="/studio">Open AG Studio</Link>
+            </div>
+            <p className="pm-caption pm-workflow-note">Judge path: Quillfox pricing → Run Audit → AG Studio evidence.</p>
           </div>
         </section>
         <section id="evidence" className="pm-container pm-evidence" aria-labelledby="evidence-title">

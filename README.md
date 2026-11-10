@@ -4,6 +4,28 @@
 
 **AI-Powered Subscription Billing Integrity Auditor**
 
+### Interactive audit workspace
+
+Studio opens with a verdict donut, billing-field × verdict pivot, linked findings table, and a full-width **Promise vs configuration** evidence panel below the dashboard. The registered custom evidence widget remains optional in the catalogue. Inspect follows the same selected finding throughout the workspace. Hidden selections are labeled rather than silently replaced. Native chart selections add canvas-only scope; accessible records follow the status/field controls. Markdown and JSON export always retain the complete recorded run. Counts are findings, never estimated losses or risk scores.
+
+Customize dashboard enables native movement, resizing and approved count-based widgets. Undo/Redo use Studio history; Reset restores the authored workspace, filters and selection while retaining the Auditor conversation with a reset notice. Layout and chat survive filter changes and switching to accessible records within a mounted run. Run switching creates a separate session and cancels old work; refreshing discards Studio customizations and chat. The floating guide keeps its separate per-tab memory. Built-in table column resizing remains unavailable in this Studio integration.
+
+**Ask Auditor** uses Studio Agent Framework's built-in harness with a custom PlanMirror Auditor and restricted built-in data, widget and page agents. It can inspect recorded evidence, set investigation filters and query scoped counts. Dashboard changes are supported, but a billing-term breakdown has not yet been verified to create or update a chart; check that the canvas changed before treating a prose breakdown as a dashboard update. Exact evidence tool results include validated Inspect buttons. It cannot run fresh audits, change verdicts, fetch arbitrary URLs or modify PayPal. Use Quillfox's Run Audit for a fresh comparison.
+
+Add server-only `OPENAI_API_KEY` and optionally `PLANMIRROR_STUDIO_MODEL` (default `gpt-5.6-luna`), then restart Next.js. Account model access and tool/stream support are required; there is no silent fallback. Without a key, manual investigation remains available. The native chat panel requires Studio edit mode in SDK 3.1.0; Ask Auditor enters that mode, and manual canvas interactions pause during agent work while Stop remains available. An AG Studio Pro with AI license may be required to remove the SDK trial watermark.
+
+Auditor requests go through `/api/ai/studio-agent`: same-origin JSON, a 256 KiB body limit, validated run IDs, fixed server policy/model, no provider storage and no hosted tools. Separate process-local limits allow two concurrent calls and 30 provider calls/minute; each exchange shares a server-issued 60-second, 12-provider-call budget across delegates and a 20-tool client execution limit. Individual calls time out after 20 seconds and cap output at 2,000 tokens. These prototype limits and run storage are not durable or shared across instances. Prompts constrain responses; restricted tools enforce the action boundary. Prior successful presentation changes remain after cancellation or partial failure.
+
+Verification uses deterministic transport tests, the real SDK harness with mocked model turns and native queries, and the existing application suites. Real-model and fresh-audit checks are recorded in the implementation plan; browser visual QA remains separate.
+
+### Floating page guide
+
+The current tab remembers up to 40 chat messages across refreshes and navigation using session storage. Each AI reply receives the latest six conversation messages and a fresh snapshot of the current page; old page snapshots are not saved.
+
+The check bot uses fixed PlanMirror instructions plus the current page's sanitized Markdown and up to six recent messages. Add `OPENAI_API_KEY` to `.env.local` and restart Next.js to enable AI replies (rebuild first for production, since static pages capture the enablement flag at build time). The key stays on the server. Without a key, the bot remains visibly labeled as a scripted preview. Chat sends the question, recent conversation, and sanitized page snapshot to OpenAI only when you send a message.
+
+The default chat model is `gpt-5.6-luna` with reasoning disabled and a 600-token output limit; override it using the server-only `PLANMIRROR_CHAT_MODEL` variable if your API account needs a different compatible model. Edit `lib/ai/check-bot.ts` to change the fixed project guide. Chat has no tools and cannot run audits or change billing settings. It explains the page evidence; financial verdicts still come from the deterministic comparator. Chat has a separate process-local demo budget of 10 provider calls/minute and two concurrent calls. This budget is not a durable, cross-instance spend cap.
+
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
 > **Start on `main`.** This branch contains the runnable team starter and shared types. The sections below describe the project design and the prototype on [`backup-mvp`](https://github.com/HozaifAwan/hackathon-project/tree/backup-mvp). Demo controls and integration examples refer to that branch. See [Team handoff](#team-handoff) for your starting files.

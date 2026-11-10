@@ -233,3 +233,6 @@ next-env.d.ts
 
 # Local files
 skills/
+.cursor/
+pnpm*
+next.config.ts

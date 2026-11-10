@@ -1,16 +1,22 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { pageMarkdown } from "../../lib/frontend/page-markdown";
+import CheckBot from "./check-bot";
 
-export default function AgentView({ children, footer }: { children: ReactNode; footer: ReactNode }) {
+export default function AgentView({ children, footer, aiEnabled = false }: { children: ReactNode; footer: ReactNode; aiEnabled?: boolean }) {
   const source = useRef<HTMLDivElement>(null);
   const footerSource = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [snapshot, setSnapshot] = useState<{ path: string; markdown: string } | null>(null);
   const enabled = snapshot?.path === pathname;
   if (snapshot && snapshot.path !== pathname) setSnapshot(null);
+
+  const getPageContext = useCallback(() => ({
+    pathname,
+    markdown: [source.current ? pageMarkdown(source.current, { hiddenViewRoot: true }) : "", footerSource.current ? pageMarkdown(footerSource.current) : ""].filter(Boolean).join("\n\n"),
+  }), [pathname]);
 
   function toggle() {
     if (enabled) setSnapshot(null);
@@ -32,14 +38,16 @@ export default function AgentView({ children, footer }: { children: ReactNode; f
       <footer className="pm-footer">
       <div className="pm-container pm-footer-inner" ref={footerSource}>
       <div className="pm-footer-copy">{footer}</div>
-      <button data-markdown-exclude type="button" className="pm-agent-toggle" onClick={toggle} aria-label="Markdown view" aria-pressed={enabled} aria-controls="agent-readable-content" title={enabled ? "Return to website" : "Read page as Markdown"} data-testid="agent-view-toggle">
+      <button data-markdown-exclude type="button" className="pm-agent-toggle" onClick={toggle} aria-label={enabled ? "Return to website view" : "Markdown view"} aria-pressed={enabled} aria-controls="agent-readable-content" title={enabled ? "Return to website" : "Markdown view"} data-testid="agent-view-toggle">
         <svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v3m-6 0h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2ZM1 11v4m22-4v4M9 16h6" />
           <circle cx="8.5" cy="11" r=".8" /><circle cx="15.5" cy="11" r=".8" />
         </svg>
+        <span className="pm-agent-toggle-label" aria-hidden="true">{enabled ? "Website" : "Markdown view"}</span>
       </button>
       </div>
       </footer>
+      <CheckBot getPageContext={getPageContext} aiEnabled={aiEnabled} />
       <span className="sr-only" role="status">{enabled ? "Markdown view enabled." : "Website view enabled."}</span>
     </>
   );
