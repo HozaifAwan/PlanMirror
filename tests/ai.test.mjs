@@ -7,6 +7,31 @@ const claim = { field: 'recurring_price', offerLabel: 'PlanMirror Pro', evidence
 const response = value => rawResponse(value);
 const rawResponse = value => new Response(JSON.stringify({ status: 'completed', output: [{ type: 'reasoning', summary: [] }, { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: JSON.stringify(value) }] }] }), { status: 200 });
 
+test('keeps a shared plan name and the exact quotes on trial and price claims', async () => {
+  const trial = {
+    field: 'trial', offerLabel: claim.offerLabel,
+    evidence: { ...claim.evidence, quote: '30-day free trial' },
+    duration: { unit: 'DAY', count: 30 }, price: null,
+  };
+  const run = claims => extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims }),
+  });
+  const result = await run([trial, claim]);
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.claims.map(item => item.offerLabel), ['PlanMirror Pro', 'PlanMirror Pro']);
+  assert.deepEqual(result.claims.map(item => item.evidence.quote), ['30-day free trial', '$9.99/month']);
+
+  for (const badClaim of [
+    { ...trial, offerLabel: '30-day freetrial' },
+    { ...claim, offerLabel: claim.evidence.quote },
+  ]) {
+    const review = await run([trial, badClaim]);
+    assert.equal(review.status, 'needs_review');
+    assert.deepEqual(review.claims, []);
+  }
+});
+
 test('normalizes nullable billing cadence without inventing a value', async () => {
   const result = await extractOffers({
     sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
