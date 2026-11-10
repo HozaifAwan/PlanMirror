@@ -20,11 +20,13 @@ const readable = (value: string) => value.replaceAll("_", " ").replace(/^./, (le
 
 export default function StudioShell({
   licenseKey,
+  aiEnabled = false,
   liveRun,
   liveRunState = "none",
   requestedRunId,
 }: {
   licenseKey?: string;
+  aiEnabled?: boolean;
   liveRun?: StudioRun;
   liveRunState?: LiveRunState;
   requestedRunId?: string;
@@ -35,20 +37,24 @@ export default function StudioShell({
   const [field, setField] = useState<FieldFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filterButton = useRef<HTMLButtonElement>(null);
+  const evidencePanel = useRef<HTMLElement>(null);
+  function inspectFinding(id: string) {
+    setSelectedId(id);
+    evidencePanel.current?.scrollIntoView?.({ block: "nearest", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }
   const activeFilters = Number(status !== "all") + Number(field !== "all");
   function closeFilters() { setFiltersOpen(false); filterButton.current?.focus(); }
   const [view, setView] = useState("grid");
   const [selectedId, setSelectedId] = useState<string | undefined>((liveRun ?? studioRuns[0]).findings[0]?.id);
   const run = availableRuns.find((item) => item.id === runId) ?? availableRuns[0];
   const visible = visibleFindings(run, status, field);
-  const selected = visible.find((item) => item.id === selectedId) ?? visible[0];
+  const selected = run.findings.find((item) => item.id === selectedId);
   const sourceLabel = run.source === "live" ? "Live sandbox audit · Read-only" : "Sample data · Read-only";
 
   function changeFilters(nextStatus: StatusFilter, nextField: FieldFilter) {
     setStatus(nextStatus);
     setField(nextField);
-    const next = visibleFindings(run, nextStatus, nextField);
-    setSelectedId(next.find((item) => item.id === selectedId)?.id ?? next[0]?.id);
+
   }
   function download() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(evidenceReport(run), null, 2)], { type: "application/json" }));
@@ -99,9 +105,10 @@ export default function StudioShell({
           <button className="studio-reset" onClick={() => changeFilters("all", "all")} disabled={!activeFilters}>Reset filters</button></div>
         </div>
         <p className="studio-scope" role="status">{visible.length} of {run.findings.length} findings · {field === "all" ? "All fields" : readable(field)} · {status === "all" ? "All statuses" : readable(status)}</p>
-        {visible.length === 0 ? <div className="studio-empty"><h3>{run.status === "not_started" ? "No audit yet" : "No findings to show"}</h3><p>{run.findings.length ? "No findings match these filters. Reset filters to restore the run." : "This run contains no findings. Review its status and run details above."}</p></div> : view === "grid" ? <div data-markdown-exclude className="studio-grid-container"><FindingsGrid key={`${run.id}-${status}-${field}`} licenseKey={licenseKey} records={visible} selectedId={selected?.id} onSelect={setSelectedId} /></div> : <div data-markdown-exclude className="studio-records"><table><caption>Current visible findings — complete records below</caption><thead><tr><th scope="col">Offer / field</th><th scope="col">Status</th><th scope="col">Summary</th><th scope="col">Action</th></tr></thead><tbody>{visible.map((record) => <tr key={record.id}><th scope="row">{record.finding.offerLabel} / {readable(record.finding.field)}</th><td><span className={`studio-status studio-${record.finding.status}`}>{readable(record.finding.status)}</span></td><td>{record.finding.summary}</td><td><button aria-pressed={selected?.id === record.id} aria-label={`Inspect ${record.finding.offerLabel} ${record.finding.field}`} onClick={() => setSelectedId(record.id)}>Inspect</button></td></tr>)}</tbody></table>{visible.map((record) => <article key={record.id} id={`record-${record.id}`}><h3>{record.finding.offerLabel} — {readable(record.finding.field)}</h3><Evidence record={record} source={run.source} /></article>)}</div>}
+        <div hidden={view !== "grid"} data-markdown-exclude className="studio-grid-container"><FindingsGrid key={run.id} licenseKey={licenseKey} run={run} scope={{ status, field }} aiEnabled={aiEnabled} selectedId={selectedId} onSelect={inspectFinding} onScope={scope => changeFilters(scope.status, scope.field)} /></div>
+        {view === "accessible" && <div data-markdown-exclude className="studio-records"><table><caption>Current visible findings — complete records below</caption><thead><tr><th scope="col">Offer / field</th><th scope="col">Status</th><th scope="col">Summary</th><th scope="col">Action</th></tr></thead><tbody>{visible.map((record) => <tr key={record.id}><th scope="row">{record.finding.offerLabel} / {readable(record.finding.field)}</th><td><span className={`studio-status studio-${record.finding.status}`}>{readable(record.finding.status)}</span></td><td>{record.finding.summary}</td><td><button aria-pressed={selected?.id === record.id} aria-label={`Inspect ${record.finding.offerLabel} ${record.finding.field}`} onClick={() => inspectFinding(record.id)}>Inspect</button></td></tr>)}</tbody></table>{visible.map((record) => <article key={record.id} id={`record-${record.id}`}><h3>{record.finding.offerLabel} — {readable(record.finding.field)}</h3><Evidence record={record} source={run.source} /></article>)}</div>}
       </section>
-      <section className="studio-card studio-evidence-panel" aria-labelledby="evidence-heading" data-markdown-exclude><div className="studio-section-heading"><div><p className="studio-eyebrow">Behind the finding</p><h2 id="evidence-heading">Evidence</h2></div><span className="studio-readonly">Read-only</span></div>{selected ? <><Mirror record={selected} /><Evidence record={selected} panel source={run.source} /></> : <div className="studio-empty"><h3>No evidence selected</h3><p>{visible.length ? "Select a finding to inspect its evidence." : "Evidence will appear here when findings are available."}</p></div>}</section>
+      <section ref={evidencePanel} className="studio-card studio-evidence-panel" aria-labelledby="evidence-heading" data-markdown-exclude><div className="studio-section-heading"><div><p className="studio-eyebrow">Behind the finding</p><h2 id="evidence-heading">Promise vs configuration</h2></div><span className="studio-readonly">Read-only</span></div>{selected ? <>{!visible.some(record => record.id === selected.id) && <div className="studio-selection-note" role="status">Selected finding is outside the current filters. <button onClick={() => changeFilters("all", "all")}>Clear filters</button>{visible[0] && <button onClick={() => inspectFinding(visible[0].id)}>Select visible finding</button>}</div>}<Mirror record={selected} /><Evidence record={selected} panel source={run.source} /></> : <div className="studio-empty"><h3>No evidence selected</h3><p>{visible.length ? "Select a finding to inspect its evidence." : "Evidence will appear here when findings are available."}</p></div>}</section>
     </div>
   </main>;
 }

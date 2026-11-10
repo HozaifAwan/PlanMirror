@@ -12,7 +12,7 @@ try {
     "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node",
     "--rewriteRelativeImportExtensions", "--esModuleInterop", "--strict", "--skipLibCheck",
   ], { stdio: "inherit" });
-  const sourceTests = ["frontend.test.mjs", "studio-adapter.test.mjs", "check-bot-mock.test.mjs", "check-bot-ai.test.mjs", "studio-workflow.test.mjs", "studio-workspace.test.mjs"];
+  const sourceTests = ["frontend.test.mjs", "studio-adapter.test.mjs", "check-bot-mock.test.mjs", "check-bot-ai.test.mjs", "studio-workflow.test.mjs", "studio-workspace.test.mjs", "studio-agent.test.mjs", "studio-harness.test.mjs"];
   const tests = readdirSync("tests").filter(name => name.endsWith(".test.mjs") && !sourceTests.includes(name));
   mkdirSync(join(output, "tests"));
   for (const name of tests) {

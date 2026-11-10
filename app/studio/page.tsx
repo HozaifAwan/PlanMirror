@@ -12,6 +12,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
   return (
     <StudioShell
       key={runId ?? "samples"}
+      aiEnabled={Boolean(process.env.OPENAI_API_KEY?.trim())}
       licenseKey={process.env.AG_STUDIO_LICENSE_KEY}
       liveRun={liveRun}
       liveRunState={liveRunState}

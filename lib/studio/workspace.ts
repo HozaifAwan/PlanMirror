@@ -1,8 +1,9 @@
 import type { AgDataSourcesDefinition, AgReportState, AgResponsiveLayoutBreakpoint } from "ag-studio";
+import type { StudioRegistry } from "./workspace-registry";
 import type { StudioFinding } from "./types";
 
 /** Every row is one recorded finding. Counts never imply a financial risk score. */
-export function workspaceData(records: StudioFinding[]): AgDataSourcesDefinition {
+export function workspaceData(records: StudioFinding[]): AgDataSourcesDefinition<StudioRegistry> {
   return { sources: [{
     id: "auditFindings",
     name: "Selected audit findings",
@@ -20,16 +21,17 @@ export function workspaceData(records: StudioFinding[]): AgDataSourcesDefinition
   }] };
 }
 
-export function workspaceState(): AgReportState {
+export function workspaceState(): AgReportState<StudioRegistry> {
   return {
     selectedPageId: "findings",
-    panels: { filters: { collapsed: true }, data: { collapsed: false }, edit: { collapsed: false } },
+    panels: { ai: { collapsed: true, width: 360 }, filters: { collapsed: true }, data: { collapsed: false }, edit: { collapsed: false } },
     pages: [{
       id: "findings",
       layout: { minWidth: 0, columns: 24, rowHeight: 28, pagePadding: 12, widgetPadding: 16, backgroundColor: "#f1f5fa", widgetBorderEnabled: true, widgetBorderColor: "#dce5ef", widgetBorderRadius: 14 },
       widgets: {
         verdicts: {
           type: "donut-chart",
+          sort: [{ field: { id: "auditFindings.Status" }, direction: "asc" }],
           dataMapping: { categoryKey: [{ id: "auditFindings.Status" }], valueKey: [{ id: "auditFindings.Findings", aggregation: "sum" }] },
           format: { title: { enabled: true, text: "Where promises stand" }, subtitle: { enabled: true, text: "Click a verdict to focus the workspace" }, crossFilter: "highlight", triggerCrossFilter: true },
         },
@@ -41,7 +43,7 @@ export function workspaceState(): AgReportState {
         evidence: {
           type: "grid",
           dataMapping: { cols: ["Inspect", "Offer", "Field", "Status", "Advertised", "Configured"].map(name => ({ id: `auditFindings.${name}` })) },
-          format: { title: { enabled: true, text: "Trace every finding" }, subtitle: { enabled: true, text: "Inspect a row to compare its source evidence below" }, style: { columnAutoSize: true }, crossFilter: "filter", triggerCrossFilter: false },
+          format: { title: { enabled: true, text: "Trace every finding" }, subtitle: { enabled: true, text: "Inspect a row to compare its recorded source evidence" }, style: { columnAutoSize: true }, crossFilter: "filter", triggerCrossFilter: false },
         },
       },
       widgetLayout: {

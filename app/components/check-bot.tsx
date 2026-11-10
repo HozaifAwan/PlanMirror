@@ -22,7 +22,7 @@ function readChat(): Message[] {
     const raw: unknown = JSON.parse(window.sessionStorage.getItem(CHAT_KEY) ?? "[]");
     if (!Array.isArray(raw)) return [];
     return raw.slice(-40).filter((item): item is Message => Boolean(item)
-      && typeof item.id === "string" && item.id.length <= 256
+      && typeof item.id === "string" && item.id.length <= 256 && !item.id.startsWith("route-")
       && (item.role === "user" || item.role === "bot")
       && typeof item.text === "string" && item.text.length <= 6000);
   } catch { return []; }
@@ -94,7 +94,6 @@ export default function CheckBot({ getPageContext, aiEnabled = false }: { getPag
     text: aiEnabled ? "Hey! Ask me about this page or how to use PlanMirror. I'll read the page when you send a question." : "Hey! I'm in scripted preview mode until AI chat is configured. Ask me about this page.",
   }, ...readChat()]);
   const drag = useRef<{ pointerId: number; originX: number; originY: number; start: Pos; moved: boolean } | null>(null);
-  const pathRef = useRef(pathname);
   const listRef = useRef<HTMLDivElement>(null);
   const suppressClick = useRef(false);
   const replyTimer = useRef<number | undefined>(undefined);
@@ -105,7 +104,7 @@ export default function CheckBot({ getPageContext, aiEnabled = false }: { getPag
 
   useEffect(() => {
     try {
-      window.sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages.filter(item => item.id !== "welcome").slice(-40)));
+      window.sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages.filter(item => item.id !== "welcome" && !item.id.startsWith("route-")).slice(-40)));
     } catch { /* Chat remains usable when session storage is full or unavailable. */ }
   }, [messages]);
 
@@ -178,15 +177,6 @@ export default function CheckBot({ getPageContext, aiEnabled = false }: { getPag
   useEffect(() => {
     listRef.current?.scrollTo?.({ top: listRef.current.scrollHeight, behavior: "instant" });
   }, [messages, open]);
-
-  useEffect(() => {
-    if (pathRef.current === pathname) return;
-    pathRef.current = pathname;
-    setMessages((current) => [
-      ...current,
-      { id: `route-${pathname}-${Date.now()}`, role: "bot", text: `Switched to ${pathname}. I refreshed my quiet page read for this route.` },
-    ]);
-  }, [pathname]);
 
   useEffect(() => () => {
     window.clearTimeout(replyTimer.current);
@@ -300,7 +290,7 @@ export default function CheckBot({ getPageContext, aiEnabled = false }: { getPag
             <button type="button" className="pm-check-bot-close" onClick={() => { setOpen(false); launcherRef.current?.focus(); }} aria-label="Close check bot chat">×</button>
           </header>
           <div className="pm-check-bot-messages" ref={listRef} role="log" aria-live="polite">
-            {messages.map((message) => (
+            {messages.filter(message => !message.id.startsWith("route-")).map((message) => (
               <p key={message.id} className={`pm-check-bot-bubble pm-check-bot-${message.role}`}>{message.text}</p>
             ))}
             {pending && <p className="pm-check-bot-bubble pm-check-bot-bot" role="status">Reading the page…</p>}

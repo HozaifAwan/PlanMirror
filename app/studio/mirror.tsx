@@ -1,14 +1,16 @@
+import { useId } from "react";
 import type { StudioFinding } from "../../lib/studio/types";
 
 /** Compact advertised-vs-configured mirror for the selected finding. */
 export default function Mirror({ record }: { record: StudioFinding }) {
+  const titleId = useId();
   const status = record.finding.status === "needs_review" ? "Needs review" : record.finding.status === "match" ? "Match" : "Mismatch";
   return (
-    <section className="studio-mirror" aria-labelledby="mirror-title" data-testid="studio-mirror">
+    <section className="studio-mirror" aria-labelledby={titleId} data-testid="studio-mirror">
       <div className="studio-section-heading">
         <div>
           <p className="studio-eyebrow">Side by side</p>
-          <h3 id="mirror-title">Mirror</h3>
+          <h3 id={titleId}>Mirror</h3>
         </div>
         <span className={`studio-status studio-${record.finding.status}`}>{status}</span>
       </div>
