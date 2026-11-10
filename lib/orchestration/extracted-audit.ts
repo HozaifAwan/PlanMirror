@@ -11,7 +11,7 @@ export const extractionSourceSchema = z.strictObject({
   offerLabel: z.string().trim().min(1).max(200),
 });
 export type ExtractionSource = z.infer<typeof extractionSourceSchema>;
-type Extractor = (input: { sourceUrl: string; sourceText: string }) => Promise<ExtractionResponse>;
+type Extractor = (input: { sourceUrl: string; sourceText: string; offerLabel?: string }) => Promise<ExtractionResponse>;
 type PlanAudit = ReturnType<typeof createPlanAudit>;
 
 /** Only map verified claims for the caller-selected offer. No financial decisions here. */
@@ -37,7 +37,7 @@ export function createExtractedPlanAudit(auditPlan: PlanAudit, extract: Extracto
     if (!parsed.success) return { status: "failed" as const, findings: [], issues: [{ code: "invalid_input" as const }] };
     let requiresReview = false;
     const result = await auditPlan(planId, async () => {
-      const output = await extract({ sourceUrl: parsed.data.sourceUrl, sourceText: parsed.data.sourceText });
+      const output = await extract({ sourceUrl: parsed.data.sourceUrl, sourceText: parsed.data.sourceText, offerLabel: parsed.data.offerLabel });
       requiresReview = output.status === "needs_review";
       return extractedCandidates(parsed.data, output);
     }, compare);

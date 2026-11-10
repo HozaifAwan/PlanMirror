@@ -99,7 +99,7 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 | --- | --- | --- |
 | Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
 | PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
-| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Implemented for supplied text; live OpenAI verification pending |
+| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Implemented; live Quillfox extraction verified November 10 |
 | Trial and price checks | Detect supported discrepancies with deterministic comparisons | Implemented; unsupported pricing requires review |
 | Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Implemented for compatible fixed-price terms |
 | Evidence and explanations | Show source quotes beside retrieved PayPal fields | Planned |
@@ -330,7 +330,7 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 
 The integration connects Ayaan's sandbox reader through a protected `POST /api/audits` route. It accepts normalized claims or supplied pricing text plus a selected offer label. Both modes use the subscription comparison engine and preserve source evidence. Unsupported pricing and ambiguous trial phases require review. See [the integration guide](docs/audit-orchestration.md) for provider interfaces and comparison safeguards.
 
-Run `npm test` for backend, AI, comparison, and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal and OpenAI transport. A separate live Next.js verification passed on November 5; see the integration guide’s live verification section. Live OpenAI extraction and dashboard integration remain unverified.
+Run `npm test` for backend, AI, comparison, and orchestration suites. Run `npm run build` followed by `npm run test:routes` for compiled API handler checks with mock PayPal and OpenAI transport. With local keys configured, run `node --env-file=.env.local scripts/verify-live-ai-audit.mjs` for an opt-in live OpenAI/PayPal audit (small provider usage). Live Quillfox extraction and comparison were verified November 10. See the integration guide for evidence and deployment limits; this does not establish production readiness.
 
 Backend API limits and read-only verification instructions: [Backend request budgets](docs/backend-request-budgets.md).
 

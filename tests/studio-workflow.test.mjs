@@ -36,6 +36,7 @@ test('AI extraction uses the existing validated source-mode adapter', async () =
     extract: async input => { source = input; return { status: 'ok', claims: quillfoxClaims().map(item => item.claim) }; },
   });
   assert.equal(source.sourceUrl, 'https://planmirror.local/quillfox');
+  assert.equal(source.offerLabel, 'Quillfox Pro');
   assert.ok(run.findings.every(record => source.sourceText.includes(record.finding.website.quote)));
   assert.ok(run.findings.every(record => record.claimId.startsWith('extracted-')));
 });

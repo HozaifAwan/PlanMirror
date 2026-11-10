@@ -11,7 +11,7 @@ import { toStudioRun } from "./to-studio-run";
 /** The caller applies the server authorization and provider budget before entering. */
 export async function runStudioAudit(input: { planId: string; mode: "labeled" | "extract" }, providers: {
   readPlan: (id: string) => Promise<PayPalBillingPlan>;
-  extract: (source: { sourceUrl: string; sourceText: string }) => Promise<ExtractionResponse>;
+  extract: (source: { sourceUrl: string; sourceText: string; offerLabel?: string }) => Promise<ExtractionResponse>;
 }) {
   let plan: PayPalBillingPlan | undefined;
   let claims: CandidateClaim[] = [];

@@ -1,5 +1,17 @@
 # Audit orchestration integration
 
+## Live extraction verification — November 10
+
+The live provider rejected the previous JSON schema's URI format. The request now uses the supported string schema and explicit string discriminants while retaining Zod URL and source quote checks. The source adapter passes the selected offer to the extractor, which constrains returned labels and requires the offer to occur in the source. Unrelated labels require review. Fee variants are omitted when the text has no fee context; claimed fees also require fee-related quote evidence, so the monthly price cannot silently become a setup fee. Omitted fees remain unknown.
+
+Actual OpenAI extraction and real PayPal comparison succeeded for Quillfox Pro: 30 advertised free days versus 7 configured days produced a mismatch; USD 9.99/month matched. Live Check Bot and a live Studio provider stream also succeeded. Studio streaming used the newly produced live run; this is not a claim that live multi-agent tool delegation was exercised. Regression tests separately cover the SDK harness and native tool execution with mocked transport.
+
+After building, reproduce the protected live API flow with `node --env-file=.env.local scripts/verify-live-ai-audit.mjs`. It starts/stops its own server on port 3138, verifies actual provider output and evidence, and writes an ignored safe result under `.next`. It uses real provider calls and should remain opt-in rather than run in credential-free CI.
+
+Validation for these fixes: 135 automated tests, 24 compiled API checks, strict lint, TypeScript and the production build passed. The production HTTP smoke test also passed with live extraction and PayPal data, including selected-offer identity, original quotes, the trial mismatch, the monthly price match, and no invented setup fee.
+
+Remaining deployment work is unchanged: authenticate actual browser callers, choose shared/owned run storage for multi-instance hosting, and configure real evidence origins. These extraction fixes do not resolve those separate issues. Historical verification notes below describe the state at their recorded dates.
+
 The coordinator accepts normalized data and calls an injected comparator. The protected audit route now connects the subscription comparator to both normalized claims and AI-extracted source claims. It reuses the shared interfaces, PayPal reader, and extraction provider.
 
 Current comparison safeguards: paid trial prices with quantity-dependent billing or nonzero taxes require review. Differently priced introductory phases are not combined into a single advertised free trial; they require review. Multiple explicitly free phases can still be aggregated with their sequence and total cycle counts preserved. OpenAI requests use a 15-second timeout, no caching, and no redirects; transport failures return safe provider errors.

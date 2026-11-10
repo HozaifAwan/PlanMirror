@@ -7,6 +7,122 @@ const claim = { field: 'recurring_price', offerLabel: 'PlanMirror Pro', evidence
 const response = value => rawResponse(value);
 const rawResponse = value => new Response(JSON.stringify({ status: 'completed', output: [{ type: 'reasoning', summary: [] }, { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: JSON.stringify(value) }] }] }), { status: 200 });
 
+test('sends a strict provider schema with supported evidence URLs and typed claim discriminants', async () => {
+  let request;
+  const result = await extractOffers({
+    sourceText: `${sourceText} Setup fee USD5.`, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async (_url, options) => {
+      request = JSON.parse(options.body);
+      return rawResponse({ status: 'ok', reason: null, claims: [claim] });
+    },
+  });
+
+  // Inspect the serialized provider contract, rather than a private schema export.
+  const format = request.text.format;
+  assert.equal(format.type, 'json_schema');
+  assert.equal(format.strict, true);
+  assert.equal(format.schema.additionalProperties, false);
+  const branches = format.schema.properties.claims.items.anyOf;
+  assert.deepEqual(branches.map(branch => branch.properties.field.const).sort(),
+    ['billing_interval', 'recurring_price', 'setup_fee', 'trial']);
+  for (const branch of branches) {
+    assert.equal(branch.properties.field.type, 'string', 'each const discriminant needs an explicit provider type');
+    const url = branch.properties.evidence.properties.url;
+    assert.equal(url.type, 'string');
+    assert.equal(Object.hasOwn(url, 'format'), false, 'the provider does not support the uri format');
+  }
+  assert.deepEqual(result, { status: 'ok', claims: [claim] });
+});
+
+test('constrains every provider claim to the selected offer and accepts matching output', async () => {
+  let request;
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, offerLabel: claim.offerLabel, apiKey: 'test',
+    fetcher: async (_url, options) => {
+      request = JSON.parse(options.body);
+      return rawResponse({ status: 'ok', reason: null, claims: [claim] });
+    },
+  });
+  for (const branch of request.text.format.schema.properties.claims.items.anyOf) {
+    assert.equal(branch.properties.offerLabel.type, 'string');
+    assert.equal(branch.properties.offerLabel.const, claim.offerLabel);
+  }
+  assert.deepEqual(result, { status: 'ok', claims: [claim] });
+});
+
+test('reviews an absent selected offer without calling the provider', async () => {
+  let calls = 0;
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, offerLabel: 'PlanMirror Enterprise', apiKey: 'test',
+    fetcher: async () => {
+      calls += 1;
+      return rawResponse({ status: 'ok', reason: null, claims: [claim] });
+    },
+  });
+  assert.equal(calls, 0);
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.claims, []);
+});
+
+test('reviews output for a different offer despite an exact source quote', async () => {
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, offerLabel: claim.offerLabel, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims: [{ ...claim, offerLabel: 'Renewal' }] }),
+  });
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.claims, []);
+});
+
+test('omits setup fees from the provider contract when the source only names a recurring price', async () => {
+  let request;
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async (_url, options) => {
+      request = JSON.parse(options.body);
+      return rawResponse({ status: 'ok', reason: null, claims: [{
+        field: 'setup_fee', offerLabel: claim.offerLabel, evidence: claim.evidence, price: claim.price,
+      }] });
+    },
+  });
+  const fields = request.text.format.schema.properties.claims.items.anyOf.map(branch => branch.properties.field.const);
+  assert.deepEqual(fields.sort(), ['billing_interval', 'recurring_price', 'trial']);
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.claims, []);
+});
+
+test('accepts a setup fee supported by an explicit fee quote', async () => {
+  const fee = {
+    field: 'setup_fee', offerLabel: claim.offerLabel,
+    evidence: { url: claim.evidence.url, quote: 'Setup fee USD5.' },
+    price: { value: '5', currencyCode: 'USD' },
+  };
+  const result = await extractOffers({
+    sourceText: `${sourceText} ${fee.evidence.quote}`, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims: [fee] }),
+  });
+  assert.deepEqual(result, { status: 'ok', claims: [fee] });
+});
+
+test('still rejects malformed evidence URLs through server validation', async () => {
+  await assert.rejects(extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims: [{
+      ...claim, evidence: { ...claim.evidence, url: 'not a URL' },
+    }] }),
+  }), /invalid extraction shape/);
+});
+
+test('requires evidence to use the source URL even when its quote matches exactly', async () => {
+  const result = await extractOffers({
+    sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',
+    fetcher: async () => rawResponse({ status: 'ok', reason: null, claims: [{
+      ...claim, evidence: { ...claim.evidence, url: 'https://other.example/pricing' },
+    }] }),
+  });
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.claims, []);
+});
+
 test('normalizes nullable billing cadence without inventing a value', async () => {
   const result = await extractOffers({
     sourceText, sourceUrl: claim.evidence.url, apiKey: 'test',

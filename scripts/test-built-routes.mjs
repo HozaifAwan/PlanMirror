@@ -101,7 +101,7 @@ assert.deepEqual(result.issues, []);
 assert.equal(result.findings[0].finding.status, "match");
 assert.equal(result.findings[0].finding.paypal.fieldPath, "billingCycles[1].fixedPrice");
 const sourceBody = JSON.stringify({ planId: rawPlan.id, source: {
-  sourceUrl: "https://example.com/pricing", sourceText: "30 days free.", offerLabel: "Route fixture",
+  sourceUrl: "https://example.com/pricing", sourceText: "Route fixture: 30 days free.", offerLabel: "Route fixture",
 } });
 await check("unauthorized extraction audit", audit, "/api/audits", { method: "POST", body: sourceBody }, 401);
 assert.equal(extractionCalls, 0);
