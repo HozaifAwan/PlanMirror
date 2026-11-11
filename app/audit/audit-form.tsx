@@ -21,7 +21,7 @@ function countByStatus(run: Extract<RunAuditResult, { ok: true }>["run"]) {
   };
 }
 
-export default function AuditForm() {
+export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean }) {
   const [state, setState] = useState<UiState>({ kind: "loading_plans" });
   const [pending, startTransition] = useTransition();
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -125,13 +125,15 @@ export default function AuditForm() {
           <input
             type="checkbox"
             checked={state.mode === "extract"}
-            disabled={busy}
+            disabled={busy || !aiEnabled}
             onChange={(event) => updateReady({ mode: event.target.checked ? "extract" : "labeled" })}
           />
           <span>Extract Quillfox advertised terms with AI</span>
         </label>
         <p className="pm-caption">
-          {state.mode === "labeled"
+          {!aiEnabled
+            ? "AI extraction is unavailable. This audit uses the published Quillfox trial and monthly price claims."
+            : state.mode === "labeled"
             ? "Uses the labeled Quillfox trial and monthly price claims."
             : "Sends Quillfox pricing copy through the server-side OpenAI extractor before comparison."}
         </p>

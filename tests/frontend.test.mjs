@@ -565,7 +565,8 @@ test('audit UI recovers from transport failures and includes loaded findings in 
       if (++lists === 1) throw new Error('transport interrupted');
       return { ok: true, plans: [{ id: 'P-DEMO', name: 'Quillfox Pro', status: 'ACTIVE' }], defaultPlanId: 'P-DEMO' };
     },
-    runPlanAudit: async () => {
+    runPlanAudit: async ({ mode }) => {
+      assert.equal(mode, 'labeled');
       if (++audits === 1) throw new Error('transport interrupted');
       return { ok: true, run: live, runId: live.id };
     },
@@ -576,10 +577,12 @@ test('audit UI recovers from transport failures and includes loaded findings in 
     const { createRoot } = await import('react-dom/client');
     const AuditForm = componentModule('app/audit/audit-form.tsx').default;
     root = createRoot(dom.window.document.getElementById('root'));
-    await React.act(async () => root.render(React.createElement(AuditForm)));
+    await React.act(async () => root.render(React.createElement(AuditForm, { aiEnabled: false })));
     assert.match(dom.window.document.body.textContent, /Plans unavailable/);
     await React.act(async () => dom.window.document.querySelector('button').click());
     assert.equal(dom.window.document.querySelector('option').textContent, 'Quillfox Pro');
+    assert.equal(dom.window.document.querySelector('input[type=checkbox]').disabled, true);
+    assert.match(dom.window.document.body.textContent, /AI extraction is unavailable/);
     assert.ok(dom.window.document.querySelector('.pm-audit-plan-dot.is-active'));
     assert.equal(dom.window.document.querySelector('option').getAttribute('aria-label'), 'Quillfox Pro, Active');
     const submit = () => dom.window.document.querySelector('form').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
