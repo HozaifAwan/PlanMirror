@@ -44,15 +44,16 @@ function readPath(plan: PayPalBillingPlan, fieldPath: string): unknown {
   if (fieldPath === "setupFee") return plan.setupFee;
   if (fieldPath === "billingCycles") return plan.billingCycles;
 
-  const match = /^billingCycles\[(\d+)\](?:\.(interval|fixedPrice))?$/.exec(fieldPath);
+  const match = /^billingCycles\[(\d+)\](?:\.(interval|fixedPrice|totalCycles))?$/.exec(fieldPath);
   if (!match) return undefined;
   const cycle = plan.billingCycles[Number(match[1])];
   if (!cycle) return undefined;
   if (!match[2]) return cycle;
-  return match[2] === "interval" ? cycle.interval : cycle.fixedPrice;
+  return match[2] === "totalCycles" ? `${cycle.totalCycles} regular collections` : match[2] === "interval" ? cycle.interval : cycle.fixedPrice;
 }
 
 function formatConfiguredValue(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
   if (!value || typeof value !== "object") return undefined;
   if ("currencyCode" in value && "value" in value) {
     const money = value as Money;

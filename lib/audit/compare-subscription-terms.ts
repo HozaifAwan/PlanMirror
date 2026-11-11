@@ -60,13 +60,25 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
       return finding("mismatch", `Advertised trial: ${label}. PayPal has no trial cycle.`, "billingCycles");
     }
     // An explicitly free claim covers only the initial consecutive free phases.
-    const prices = trials.map(({ cycle }) => fixedPrice(cycle));
-    const initialPrice = prices[0];
-    if (claim.price && new Decimal(claim.price.value).isZero() && initialPrice &&
-        new Decimal(initialPrice.value).isZero() &&
-        prices.every(price => price?.currencyCode === initialPrice.currencyCode)) {
-      const firstPaid = prices.findIndex(price => price && !new Decimal(price.value).isZero());
-      if (firstPaid !== -1) trials = trials.slice(0, firstPaid);
+    let paidPhaseFollows = false;
+    const trialPrice = claim.price;
+    if (trialPrice && new Decimal(trialPrice.value).isZero()) {
+      const boundary = trials.findIndex(({ cycle }) => {
+        const price = fixedPrice(cycle);
+        return !price || price.currencyCode !== trialPrice.currencyCode || !new Decimal(price.value).isZero();
+      });
+      if (boundary !== -1) {
+        const { cycle, index } = trials[boundary];
+        const price = fixedPrice(cycle);
+        if (price && !new Decimal(price.value).isZero()) {
+          if (boundary === 0) {
+            return finding("mismatch", `Advertised trial: ${label} free. PayPal starts with a paid phase at ${moneyLabel(price)} per collection.`,
+              `billingCycles[${index}].fixedPrice`);
+          }
+          trials = trials.slice(0, boundary);
+          paidPhaseFollows = true;
+        }
+      }
     }
     // Other multi-phase claims require a common known price to combine durations.
     if (trials.length > 1) {
@@ -85,11 +97,10 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
       }
       total += actual.count * BigInt(cycle.totalCycles);
     }
-    const summary = `Advertised trial: ${label}. PayPal trial: ${total} ${advertised.unit}.`;
+    const summary = `Advertised trial: ${label}. PayPal trial: ${total} ${advertised.unit}.${paidPhaseFollows ? " A paid introductory phase follows the free period." : ""}`;
     if (total !== advertised.count) return finding("mismatch", summary, "billingCycles");
-    if (!claim.price) return finding("needs_review", `${summary} Advertised trial price is unspecified.`, "billingCycles");
+    if (!trialPrice) return finding("needs_review", `${summary} Advertised trial price is unspecified.`, "billingCycles");
 
-    const trialPrice = claim.price;
     if (new Decimal(trialPrice.value).isZero()) {
       for (const { cycle, index } of trials) {
         const configured = fixedPrice(cycle);

@@ -100,3 +100,17 @@ test('pricing and stale FAQ claims retain distinct verdicts against one plan rea
   assert.equal(faq.finding.status, 'mismatch');
   assert.match(faq.finding.website.url, /\/faq#stale-note$/);
 });
+
+test('finite recurring evidence displays the exact collection limit in Studio', async () => {
+  const configured = structuredClone(plan);
+  configured.billingCycles[1].fixedPrice.value = '9.99';
+  configured.billingCycles[1].totalCycles = 12;
+  const { run } = await runStudioAudit({ planId: plan.id, mode: 'corrected' }, {
+    readPlan: async () => configured,
+    extract: async () => { throw new Error('Corrected copy does not need extraction'); },
+  });
+  const renewal = run.findings.find(record => record.claimId === 'quillfox-monthly');
+  assert.equal(renewal.finding.status, 'needs_review');
+  assert.equal(renewal.finding.paypal.fieldPath, 'billingCycles[1].totalCycles');
+  assert.equal(renewal.configuredDisplay, '12 regular collections');
+});

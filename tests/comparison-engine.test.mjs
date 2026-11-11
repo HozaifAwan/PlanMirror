@@ -187,3 +187,9 @@ test("ambiguous offer mapping prevents a price verdict", async () => {
   assert.equal(result.findings[0].finding.status, "needs_review");
   assert.deepEqual(result.findings[0].finding.website, advertised.evidence);
 });
+
+test("a paid first phase contradicts a free trial even when durations use different units", () => {
+  const configured = plan(intro(interval("MONTH"), 1, "5"), intro(interval("DAY", 7), 2), regular("19", undefined, 3));
+  check(configured, trial(interval("DAY", 7), "7 days free"), "mismatch",
+    "billingCycles[0].fixedPrice", ["starts with a paid phase", "5 USD"]);
+});
