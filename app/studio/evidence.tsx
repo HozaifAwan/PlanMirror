@@ -25,6 +25,7 @@ export default function Evidence({
   return <>
     <p><strong>{finding.offerLabel}</strong> · {finding.field.replaceAll("_", " ")} · <span className={`studio-status studio-${finding.status}`}>{finding.status === "needs_review" ? "Needs review" : finding.status === "match" ? "Match" : "Mismatch"}</span></p>
     <p>{finding.summary}</p>
+    {record.priority && <p>Priority: {record.priority.level}. {record.priority.reason}</p>}
     {finding.recommendation && <p>Recommendation: {finding.recommendation}</p>}
     {includeTechnicalIds && <p className="studio-meta">Finding ID: {record.id} · Claim ID: {record.claimId}</p>}
     <div className="studio-evidence-columns">

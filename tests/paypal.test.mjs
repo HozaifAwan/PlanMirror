@@ -137,3 +137,36 @@ test('listing timeout leaves shared OAuth usable by another reader', async t => 
   assert.equal((await detail).id, 'P-TEST123');
   assert.equal(listingReads, 0);
 });
+
+test('retries transient read responses at most once without fetching another token', async () => {
+  for (const recover of [true, false]) {
+    let auth = 0;
+    let reads = 0;
+    const client = createSandboxClient(config, async url => {
+      if (url.endsWith('/token')) { auth++; return token(); }
+      return ++reads === 2 && recover ? response(fixture()) : response({}, 503);
+    });
+    const pending = client.readPlan('P-TEST123');
+    if (recover) assert.equal((await pending).id, 'P-TEST123');
+    else await assert.rejects(pending, { status: 502 });
+    assert.equal(reads, 2);
+    assert.equal(auth, 1);
+  }
+});
+
+test('counts filtered subscription pages without forwarding provider links', async () => {
+  let page = 0;
+  const client = createSandboxClient(config, async url => {
+    if (url.endsWith('/token')) return token();
+    const query = new URL(url).searchParams;
+    assert.equal(query.get('plan_ids'), 'P-TEST123');
+    assert.equal(query.get('statuses'), 'ACTIVE');
+    assert.equal(query.get('page'), String(++page));
+    const item = id => ({ id, plan_id: 'P-TEST123', status: 'ACTIVE' });
+    return response(page === 1
+      ? { subscriptions: [item('I-ONE')], links: [{ rel: 'next', href: 'https://example.test' }] }
+      : { subscriptions: [item('I-ONE'), item('I-TWO')], links: [] });
+  });
+  assert.equal(await client.countActiveSubscriptions('P-TEST123'), 2);
+  assert.equal(page, 2);
+});

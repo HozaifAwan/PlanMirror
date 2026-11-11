@@ -97,7 +97,7 @@ test("two trial phases follow sequence and count every cycle", () => {
   const configured = plan(regular("19", undefined, 3), intro(interval("DAY", 2), 2, "0", 2), intro(interval("WEEK")));
   check(configured, trial(interval("DAY", 11), "Eleven days free"), "match", "billingCycles", ["11 days", "0 USD"]);
   configured.billingCycles[1].fixedPrice = price("5");
-  check(configured, trial(interval("DAY", 11), "Eleven days free"), "needs_review", "billingCycles", ["different or unsupported pricing"]);
+  check(configured, trial(interval("DAY", 11), "Eleven days free"), "mismatch", "billingCycles", ["PayPal trial: 7 days"]);
   check(configured, renewal("19"), "match", "billingCycles[0].fixedPrice", ["19 USD"]);
   check(plan(intro(interval("WEEK"), 1, "5"), regular("19", undefined, 2)),
     trial(interval("DAY", 7), "First week for $5", { price: price("5") }),
@@ -106,9 +106,10 @@ test("two trial phases follow sequence and count every cycle", () => {
 
 test("mixed free and paid introductory phases do not imply a longer free trial", () => {
   const configured = plan(intro(interval("DAY", 7)), intro(interval("DAY", 30), 2, "5"), regular("19", undefined, 3));
-  for (const days of [7, 30, 37]) {
+  check(configured, trial(interval("DAY", 7), "7 days free"), "match", "billingCycles", ["PayPal trial: 7 days"]);
+  for (const days of [30, 37]) {
     check(configured, trial(interval("DAY", days), `${days} days free`),
-      "needs_review", "billingCycles", ["different or unsupported pricing"]);
+      "mismatch", "billingCycles", ["PayPal trial: 7 days"]);
   }
 });
 

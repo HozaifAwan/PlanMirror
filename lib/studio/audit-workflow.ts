@@ -11,6 +11,7 @@ import { toStudioRun } from "./to-studio-run";
 /** The caller applies the server authorization and provider budget before entering. */
 export async function runStudioAudit(input: { planId: string; mode: "labeled" | "extract" | "corrected" | "cross_page" }, providers: {
   readPlan: (id: string) => Promise<PayPalBillingPlan>;
+  countActiveSubscriptions?: (id: string) => Promise<number>;
   extract: (source: { sourceUrl: string; sourceText: string; offerLabel?: string }) => Promise<ExtractionResponse>;
 }) {
   let plan: PayPalBillingPlan | undefined;
@@ -36,9 +37,10 @@ export async function runStudioAudit(input: { planId: string; mode: "labeled" | 
   const description = input.mode === "cross_page"
     ? "Quillfox pricing and its older FAQ quote different monthly rates. Each source is compared separately against the same PayPal plan."
     : `Live sandbox audit of ${plan.name} using ${input.mode === "corrected" ? "the corrected Quillfox offer preview" : input.mode === "extract" ? "AI-extracted Quillfox pricing text" : "labeled Quillfox claims"}.`;
-  return {
-    result,
-    run: toStudioRun({ id: randomUUID(), label: input.mode === "corrected" ? "Corrected offer re-audit" : "Live audit", result, claims, plan,
-      description }),
-  };
+  const run = toStudioRun({ id: randomUUID(), label: input.mode === "corrected" ? "Corrected offer re-audit" : "Live audit", result, claims, plan,
+      description });
+  if (providers.countActiveSubscriptions && result.findings.some(item => item.finding.status === "mismatch")) {
+    run.activeSubscriptions = await providers.countActiveSubscriptions(plan.id).catch(() => null);
+  }
+  return { result, run };
 }
