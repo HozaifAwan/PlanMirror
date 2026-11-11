@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { compareSubscriptionTerms } from "../audit/compare-subscription-terms";
-import { quillfoxClaims, quillfoxOffer, quillfoxPricingSourceText, quillfoxSourceUrl } from "../audit/quillfox";
+import { quillfoxClaims, quillfoxCrossPageClaims, quillfoxOffer, quillfoxPricingSourceText, quillfoxSourceUrl } from "../audit/quillfox";
 import type { ExtractionResponse } from "../ai/schema";
 import type { CandidateClaim } from "../orchestration/contracts";
 import { createExtractedPlanAudit } from "../orchestration/extracted-audit";
@@ -9,7 +9,7 @@ import type { PayPalBillingPlan } from "../paypal/types";
 import { toStudioRun } from "./to-studio-run";
 
 /** The caller applies the server authorization and provider budget before entering. */
-export async function runStudioAudit(input: { planId: string; mode: "labeled" | "extract" }, providers: {
+export async function runStudioAudit(input: { planId: string; mode: "labeled" | "extract" | "corrected" | "cross_page" }, providers: {
   readPlan: (id: string) => Promise<PayPalBillingPlan>;
   extract: (source: { sourceUrl: string; sourceText: string; offerLabel?: string }) => Promise<ExtractionResponse>;
 }) {
@@ -21,8 +21,8 @@ export async function runStudioAudit(input: { planId: string; mode: "labeled" | 
     plan = await providers.readPlan(id);
     return plan;
   });
-  const result = input.mode === "labeled"
-    ? await auditPlan(input.planId, async () => (claims = quillfoxClaims()), compareSubscriptionTerms)
+  const result = input.mode !== "extract"
+    ? await auditPlan(input.planId, async () => (claims = input.mode === "cross_page" ? quillfoxCrossPageClaims() : quillfoxClaims(input.mode === "corrected")), compareSubscriptionTerms)
     : await createExtractedPlanAudit(async (id, loadClaims, compare) => auditPlan(id, async () => {
       claims = await loadClaims();
       return claims;
@@ -33,9 +33,12 @@ export async function runStudioAudit(input: { planId: string; mode: "labeled" | 
     }, compareSubscriptionTerms);
 
   if (result.status === "failed" || !plan) return { result };
+  const description = input.mode === "cross_page"
+    ? "Quillfox pricing and its older FAQ quote different monthly rates. Each source is compared separately against the same PayPal plan."
+    : `Live sandbox audit of ${plan.name} using ${input.mode === "corrected" ? "the corrected Quillfox offer preview" : input.mode === "extract" ? "AI-extracted Quillfox pricing text" : "labeled Quillfox claims"}.`;
   return {
     result,
-    run: toStudioRun({ id: randomUUID(), label: "Live audit", result, claims, plan,
-      description: `Live sandbox audit of ${plan.name} using ${input.mode === "labeled" ? "labeled Quillfox claims" : "AI-extracted Quillfox pricing text"}.` }),
+    run: toStudioRun({ id: randomUUID(), label: input.mode === "corrected" ? "Corrected offer re-audit" : "Live audit", result, claims, plan,
+      description }),
   };
 }

@@ -124,5 +124,11 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
   if (quoted.unit !== billed.unit || billed.count % quoted.count !== BigInt(0)) {
     return finding("needs_review", "The advertised rate cannot be scaled to the collection interval exactly.", cadencePath);
   }
-  return compareMoney(claim.price, configured, path, billed.count / quoted.count);
+  const priceFinding = compareMoney(claim.price, configured, path, billed.count / quoted.count);
+  if (priceFinding.status === "match" && regular.cycle.totalCycles > 0) {
+    return finding("needs_review",
+      `${priceFinding.summary} PayPal stops after ${regular.cycle.totalCycles} regular collections. Confirm that limit against the offer.`,
+      `billingCycles[${regular.index}].totalCycles`);
+  }
+  return priceFinding;
 };

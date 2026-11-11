@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { listSandboxPlans, runPlanAudit, type AuditPlanOption, type RunAuditResult } from "./actions";
+import { quillfoxCorrectedOffer } from "../../lib/audit/quillfox";
 import Evidence from "../studio/evidence";
 
 type UiState =
@@ -60,12 +61,16 @@ export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean })
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    audit();
+  }
+
+  function audit(override?: "corrected" | "cross_page") {
     if (state.kind !== "ready" && state.kind !== "success" && state.kind !== "failed") return;
     const { plans, planId, mode } = state;
     setState({ kind: "auditing", plans, planId, mode });
     startTransition(async () => {
       let result;
-      try { result = await runPlanAudit({ planId, mode }); }
+      try { result = await runPlanAudit({ planId, mode: override ?? mode }); }
       catch { result = { ok: false as const, error: "The audit request was interrupted. Try running it again.", code: "request_failed" }; }
       if (!result.ok) {
         setState({ kind: "failed", plans, planId, mode, error: result.error, code: result.code });
@@ -140,7 +145,18 @@ export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean })
         <button className="pm-primary-action" type="submit" disabled={busy}>
           {busy ? "Running audit…" : "Run Audit"}
         </button>
+        <button className="pm-secondary-action" type="button" disabled={busy}
+          onClick={() => audit("cross_page")}>Compare pricing and FAQ</button>
       </form>
+
+      <section id="corrected-offer" aria-label="Corrected offer preview">
+        <p><strong>Corrected offer preview</strong></p>
+        <blockquote>{quillfoxCorrectedOffer.quote}</blockquote>
+        <p className="pm-caption">Re-audit the revised copy against the same live PayPal plan.</p>
+        <button type="button" className="pm-secondary-action"
+          disabled={busy || (state.kind !== "success" && state.kind !== "failed")}
+          onClick={() => audit("corrected")}>Re-audit corrected offer</button>
+      </section>
 
       {state.kind === "auditing" && (
         <p className="pm-audit-status" role="status" data-testid="audit-status">Running audit against the selected sandbox plan…</p>
