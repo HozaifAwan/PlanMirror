@@ -66,3 +66,37 @@ test('provider failures and unrelated evidence never create a live result', asyn
     assert.ok(!JSON.stringify(result).includes('private provider detail'));
   }
 });
+
+test('corrected copy clears the trial mismatch against the same sandbox plan', async () => {
+  const configured = structuredClone(plan);
+  configured.billingCycles[1].fixedPrice.value = '9.99';
+  const reads = [];
+  const providers = {
+    readPlan: async id => { reads.push(id); return configured; },
+    extract: async () => { throw new Error('Corrected copy does not need extraction'); },
+  };
+  const original = await runStudioAudit({ planId: plan.id, mode: 'labeled' }, providers);
+  const corrected = await runStudioAudit({ planId: plan.id, mode: 'corrected' }, providers);
+  assert.deepEqual(reads, [plan.id, plan.id]);
+  assert.notEqual(original.run.id, corrected.run.id);
+  assert.deepEqual(original.run.findings.map(record => record.finding.status), ['mismatch', 'match']);
+  assert.deepEqual(corrected.run.findings.map(record => record.finding.status), ['match', 'match']);
+  assert.match(corrected.run.findings[0].finding.website.url, /#corrected-offer$/);
+  assert.equal(corrected.run.findings[0].finding.website.quote, '7 days free, then USD 9.99 per month.');
+});
+
+test('pricing and stale FAQ claims retain distinct verdicts against one plan read', async () => {
+  const configured = structuredClone(plan);
+  configured.billingCycles[1].fixedPrice.value = '9.99';
+  let reads = 0;
+  const { run } = await runStudioAudit({ planId: plan.id, mode: 'cross_page' }, {
+    readPlan: async () => { reads++; return configured; },
+    extract: async () => { throw new Error('Cross-page audit uses published claims'); },
+  });
+  assert.equal(reads, 1);
+  const pricing = run.findings.find(record => record.id === 'quillfox-monthly');
+  const faq = run.findings.find(record => record.id === 'quillfox-faq-monthly');
+  assert.equal(pricing.finding.status, 'match');
+  assert.equal(faq.finding.status, 'mismatch');
+  assert.match(faq.finding.website.url, /\/faq#stale-note$/);
+});

@@ -143,7 +143,7 @@ The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server share
 
 1. Open **Quillfox**, select the active **Quillfox Pro** sandbox plan, and select **Run Audit**.
 2. Open the result in **AG Studio**. Inspect the trial mismatch and compare the published quote with the PayPal billing settings. Export the complete evidence from the workspace.
-3. Open **AG Studio** from the main navigation and choose **Corrected sample** to demonstrate matching terms using fixture data.
+3. Back on Quillfox, select **Re-audit corrected offer**. The preview promises seven days and reads the same sandbox plan again. Open the new result in AG Studio to inspect the updated verdict. Both audit runs remain separately inspectable.
 4. With OpenAI configured, enable **Extract Quillfox advertised terms with AI** before running the audit. The server checks the extracted evidence against the offer copy. Without OpenAI, the audit compares the published Quillfox claims with the live sandbox plan.
 
 ### Host the judge demo

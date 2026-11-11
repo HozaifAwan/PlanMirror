@@ -61,9 +61,9 @@ export async function listSandboxPlans(): Promise<ListPlansResult> {
   }
 }
 
-const auditInput = z.strictObject({ planId: planIdSchema, mode: z.enum(["labeled", "extract"]) });
+const auditInput = z.strictObject({ planId: planIdSchema, mode: z.enum(["labeled", "extract", "corrected", "cross_page"]) });
 
-export async function runPlanAudit(input: { planId: string; mode: "labeled" | "extract" }): Promise<RunAuditResult> {
+export async function runPlanAudit(input: { planId: string; mode: "labeled" | "extract" | "corrected" | "cross_page" }): Promise<RunAuditResult> {
   try {
     authorizeAction();
     const parsed = auditInput.safeParse(input);

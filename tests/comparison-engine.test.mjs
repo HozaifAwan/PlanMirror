@@ -41,6 +41,14 @@ test("Quillfox recurring price mismatch", () => {
   check(plan(regular("24")), renewal("19"), "mismatch", "billingCycles[0].fixedPrice", ["19 USD", "24 USD"]);
 });
 
+test("finite renewals preserve price mismatches and flag matching rates for review", () => {
+  const configured = plan({ ...regular("19"), totalCycles: 12 });
+  check(configured, renewal("19"), "needs_review", "billingCycles[0].totalCycles",
+    ["19 USD", "stops after 12 regular collections"]);
+  check(configured, renewal("24"), "mismatch", "billingCycles[0].fixedPrice",
+    ["24 USD", "19 USD"]);
+});
+
 test("Quillfox conflicting FAQ and pricing page retain separate evidence and verdicts", async () => {
   const advertised = [renewal("59"), renewal("49", source("49 USD per month", "faq"))];
   const configured = plan(regular("59"));
