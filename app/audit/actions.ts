@@ -68,6 +68,9 @@ export async function runPlanAudit(input: { planId: string; mode: "labeled" | "e
     authorizeAction();
     const parsed = auditInput.safeParse(input);
     if (!parsed.success) return { ok: false, error: "Choose a valid sandbox plan and audit mode.", code: "invalid_input" };
+    if (parsed.data.mode === "extract" && !process.env.OPENAI_API_KEY?.trim()) {
+      return { ok: false, error: "AI extraction is unavailable. Run the audit with the published Quillfox claims.", code: "ai_unavailable" };
+    }
     return await requestLimits.runProviderWork(async () => {
       const { run, result } = await runStudioAudit(parsed.data, { readPlan: readSandboxPlan, extract: extractOffers });
       if (!run) {

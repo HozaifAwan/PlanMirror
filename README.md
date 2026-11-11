@@ -141,13 +141,18 @@ The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server share
 
 ### Run the Quillfox demo
 
-1. Open the home page and follow **View Quillfox pricing page** to see the advertised offer.
-2. Run the mismatch demo. It compares the offer with a labeled sample plan that has a seven-day trial and a $19.99 monthly price.
-3. Rerun with the corrected sample to see both checks match.
-4. Inspect the editable AG Studio evidence grid under **Audit findings**. Use the toggle to collapse it.
-5. To use actual PayPal data, open **Audit a live PayPal sandbox plan** and supply a sandbox plan ID and your local audit token. Select a plan intended to implement the Quillfox offer. With **Extract Quillfox’s advertised terms with AI** enabled, set `OPENAI_API_KEY` in `.env.local` and restart the server. The audit checks the structured model response against the published Quillfox copy before comparing it to PayPal. Uncheck AI extraction to use the known Quillfox terms. An error is shown separately and never presented as live data.
+1. Open **Quillfox**, select the active **Quillfox Pro** sandbox plan, and select **Run Audit**.
+2. Open the result in **AG Studio**. Inspect the trial mismatch and compare the published quote with the PayPal billing settings. Export the complete evidence from the workspace.
+3. Open **AG Studio** from the main navigation and choose **Corrected sample** to demonstrate matching terms using fixture data.
+4. With OpenAI configured, enable **Extract Quillfox advertised terms with AI** before running the audit. The server checks the extracted evidence against the offer copy. Without OpenAI, the audit compares the published Quillfox claims with the live sandbox plan.
 
-The comparison supports one free trial expressed in days and one fixed monthly renewal in USD. Unsupported cycles or pricing conditions require review. The sample rerun changes only the demo data.
+### Host the judge demo
+
+Deploy as a Node.js application using `npm ci`, `npm run build`, and `npm start`. Use one long-running instance for this prototype because audit runs and agent limits are stored in process memory. Restarting the instance clears previous run links.
+
+Set `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=sandbox`, and a random `PLANMIRROR_SANDBOX_READ_TOKEN` of at least 32 characters in the hosting provider's server environment. Use a dedicated sandbox merchant with demo plans. Set `PAYPAL_SANDBOX_PLAN_ID` to select Quillfox Pro by default.
+
+Set `OPENAI_API_KEY` in the host's server environment to enable extraction and Ask Auditor. Judges use the hosted URL without entering credentials. A browser SDK license may be configured with `AG_STUDIO_LICENSE_KEY`. Verify the deployed Quillfox audit and Studio handoff in a fresh browser before sharing the link.
 
 ### AG Studio demo acceptance
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { quillfoxOffer } from "../../lib/audit/quillfox";
 import AuditForm from "../audit/audit-form";
 
+export const dynamic = "force-dynamic";
+
 export default function QuillfoxPricingPage() {
   return (
     <main id="main-content" tabIndex={-1} className="pm-container pm-merchant-page pm-quillfox-workspace" aria-labelledby="quillfox-title" data-testid="quillfox-pricing-page">
@@ -43,7 +45,8 @@ export default function QuillfoxPricingPage() {
           </div>
           <h2 id="audit-title">Does the plan match the promise?</h2>
           <p className="pm-merchant-lead">Choose the PayPal sandbox plan for Quillfox Pro. Compare its billing settings with the offer alongside it.</p>
-          <AuditForm />
+          <AuditForm aiEnabled={Boolean(process.env.OPENAI_API_KEY?.trim())} />
+          <p className="pm-caption"><Link href="/studio">Explore sample audits in AG Studio</Link></p>
           <p className="pm-quillfox-audit-note">Your audit reads the plan’s settings. It never changes prices or charges a customer.</p>
         </section>
       </div>
