@@ -97,6 +97,13 @@ export function toStudioRun(input: {
       id: claimId,
       claimId,
       finding,
+      priority: finding.status === "match" ? undefined : finding.status === "needs_review"
+        ? { level: "review", reason: "The available terms do not support a definitive verdict." }
+        : finding.field === "trial"
+          ? { level: "high", reason: "A different free-trial term can change when the first payment is due." }
+          : finding.field === "setup_fee"
+            ? { level: "medium", reason: "A one-time charge differs from the published terms." }
+            : { level: "high", reason: "The recurring amount or collection schedule differs from the published terms." },
       advertisedDisplay: claim ? formatAdvertisedDisplay(claim) : UNAVAILABLE_ADVERTISED,
       configuredDisplay: finding.paypal?.planId === input.plan.id && finding.paypal.retrievedAt === input.plan.retrievedAt
         ? formatConfiguredDisplay(input.plan, finding.paypal.fieldPath) : UNAVAILABLE_CONFIGURED,

@@ -21,6 +21,8 @@ const rawPlan = {
     frequency: { interval_unit: "MONTH", interval_count: 1 },
     pricing_scheme: { fixed_price: { value: "9.99", currency_code: "USD" } } }],
 };
+let webhookVerified = false;
+let webhookPlanReads = 0;
 let upstreamCalls = 0;
 let failUpstream = false;
 let extractionMode = "ok";
@@ -45,6 +47,13 @@ globalThis.fetch = async (url, options) => {
   assert.equal(options.cache, "no-store");
   if (failUpstream) throw Error("Private upstream failure");
   if (String(url).endsWith("/token")) return Response.json({ access_token: "route-test-oauth", expires_in: 3600 });
+  if (String(url).endsWith("/verify-webhook-signature")) {
+    const payload = JSON.parse(options.body);
+    assert.equal(payload.webhook_id, "webhook-test-id");
+    assert.equal(payload.webhook_event.resource.id, rawPlan.id);
+    return Response.json({ verification_status: webhookVerified ? "SUCCESS" : "FAILURE" });
+  }
+  webhookPlanReads++;
   assert.equal(options.headers.Prefer, "return=representation");
   if (String(url).includes("/plans?")) return Response.json({
     plans: [{ id: rawPlan.id }], total_items: 1, total_pages: 1,
@@ -160,3 +169,25 @@ assert.equal(upstreamCalls, callsAtLimit);
 process.env.PLANMIRROR_SANDBOX_READ_TOKEN = "";
 await check("disabled gate fails closed", audit, "/api/audits", { method: "POST", headers: json, body: requestBody }, 503);
 console.log("Compiled route checks passed with mock PayPal transport.");
+
+failUpstream = false;
+const webhook = require("../.next/server/app/api/paypal/webhooks/route.js").routeModule.userland.POST;
+const notify = (headers = {}) => webhook(new Request("http://localhost/api/paypal/webhooks", {
+  method: "POST", headers: { "content-type": "application/json", ...headers },
+  body: JSON.stringify({ id: "WH-TEST", event_type: "BILLING.PLAN.UPDATED", resource: { id: rawPlan.id } }),
+}));
+process.env.PAYPAL_WEBHOOK_ID = "webhook-test-id";
+process.env.PAYPAL_SANDBOX_PLAN_ID = rawPlan.id;
+assert.equal((await notify()).status, 400);
+const signedHeaders = Object.fromEntries(["auth-algo", "cert-url", "transmission-id", "transmission-sig", "transmission-time"].map(name => ["paypal-" + name, "test"]));
+const readsBeforeWebhook = webhookPlanReads;
+assert.equal((await notify(signedHeaders)).status, 401);
+assert.equal(webhookPlanReads, readsBeforeWebhook);
+webhookVerified = true;
+const accepted = await notify(signedHeaders);
+assert.equal(accepted.status, 200);
+const receipt = await accepted.json();
+assert.match(receipt.runId, /^[0-9a-f-]{36}$/);
+assert.deepEqual(await (await notify(signedHeaders)).json(), receipt);
+assert.equal(webhookPlanReads, readsBeforeWebhook + 1);
+console.log("PASS verified webhook audits once and rejects invalid signatures");

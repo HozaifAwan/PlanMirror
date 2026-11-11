@@ -54,10 +54,16 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
       signal?.throwIfAborted();
       return request(path, { signal, headers: { Authorization: "Bearer " + value, Prefer: "return=representation" } });
     };
-    let response = await send(t.value);
+    let activeToken = t;
+    let response = await send(activeToken.value);
     if (response.status === 401) {
       if (cached && await cached === t) cached = undefined;
-      response = await send((await token()).value);
+      activeToken = await token();
+      response = await send(activeToken.value);
+    }
+    if ([502, 503, 504].includes(response.status)) {
+      void response.body?.cancel().catch(() => {});
+      response = await send(activeToken.value);
     }
     if (!response.ok) throw new PayPalError(response.status === 404 ? 404 : 502,
       response.status === 404 ? "Sandbox plan not found." : "PayPal sandbox request failed.");
@@ -102,5 +108,34 @@ export function createSandboxClient(config: { clientId: string; clientSecret: st
       signal.removeEventListener("abort", abort);
     }
   }
-  return { readPlan, listPlans };
+  async function countActiveSubscriptions(id: string) {
+    if (!planIdSchema.safeParse(id).success) throw new PayPalError(400, "Invalid plan ID.");
+    const signal = AbortSignal.timeout(8_000);
+    const seen = new Set<string>();
+    for (let page = 1; page <= 5; page++) {
+      const query = new URLSearchParams({ plan_ids: id, statuses: "ACTIVE", page_size: "20", page: String(page) });
+      const data = await get(`/v1/billing/subscriptions?${query}`, signal);
+      const parsed = z.object({
+        subscriptions: z.array(z.object({ id: z.string().min(1), plan_id: z.literal(id), status: z.literal("ACTIVE") })).max(20),
+        links: z.array(z.object({ rel: z.string() })),
+      }).safeParse(data);
+      if (!parsed.success) throw new PayPalError(502, "PayPal returned an invalid subscription list.");
+      for (const item of parsed.data.subscriptions) seen.add(item.id);
+      if (!parsed.data.links.some(link => link.rel === "next")) return seen.size;
+    }
+    throw new PayPalError(502, "The subscription count exceeded the page limit.");
+  }
+
+  async function verifyWebhookSignature(payload: Record<string, unknown>) {
+    const access = await token();
+    const response = await request("/v1/notifications/verify-webhook-signature", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + access.value, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new PayPalError(502, "PayPal webhook verification failed.");
+    return z.object({ verification_status: z.literal("SUCCESS") }).safeParse(await json(response)).success;
+  }
+
+  return { readPlan, listPlans, countActiveSubscriptions, verifyWebhookSignature };
 }

@@ -72,7 +72,12 @@ export async function runPlanAudit(input: { planId: string; mode: "labeled" | "e
       return { ok: false, error: "AI extraction is unavailable. Run the audit with the published Quillfox claims.", code: "ai_unavailable" };
     }
     return await requestLimits.runProviderWork(async () => {
-      const { run, result } = await runStudioAudit(parsed.data, { readPlan: readSandboxPlan, extract: extractOffers });
+      const { run, result } = await runStudioAudit(parsed.data, {
+        readPlan: readSandboxPlan,
+        extract: extractOffers,
+        countActiveSubscriptions: process.env.PLANMIRROR_SUBSCRIPTION_COUNTS === "true"
+          ? id => sandboxClient().countActiveSubscriptions(id) : undefined,
+      });
       if (!run) {
         const issue = result.issues[0];
         return { ok: false as const, error: "The audit could not be completed. Review the selected plan and provider configuration, then retry.", code: issue ? `${issue.code}${issue.stage ? `_${issue.stage}` : ""}` : "audit_failed" };

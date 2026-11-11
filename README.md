@@ -1,6 +1,6 @@
 # PlanMirror
 
-> **PayPal backend setup:** See [the sandbox integration guide](docs/paypal-sandbox.md) for the implemented protected list/detail routes, environment setup, mocked tests, live verification, and Quillfox test-plan provisioning. The historical prototype/demo sections below describe work beyond the current main application; the comparison engine, extraction and AG Studio integration are separate teammate workstreams.
+> **PayPal backend setup.** See the [sandbox integration guide](docs/paypal-sandbox.md) for credentials, protected plan routes, and Quillfox sandbox provisioning.
 
 **AI-Powered Subscription Billing Integrity Auditor**
 
@@ -28,7 +28,7 @@ The default chat model is `gpt-5.6-luna` with reasoning disabled and a 600-token
 
 A merchant-side auditing application for comparing advertised subscription promises with the actual billing configuration stored in PayPal. Built for the PayPal AI Hackathon 2026.
 
-> **Start on `main`.** This branch contains the runnable team starter and shared types. The sections below describe the project design and the prototype on [`backup-mvp`](https://github.com/HozaifAwan/hackathon-project/tree/backup-mvp). Demo controls and integration examples refer to that branch. See [Team handoff](#team-handoff) for your starting files.
+> **Start on `main`.** The older prototype is preserved on [`backup-mvp`](https://github.com/HozaifAwan/hackathon-project/tree/backup-mvp). Use the current Quillfox walkthrough below.
 
 > **Backup prototype: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The sandbox audit can extract terms from the Quillfox pricing copy with OpenAI. General webpage extraction and the AI Auditor agent are planned.
 
@@ -93,19 +93,21 @@ The extraction branch retains source quotes and URLs. The PayPal branch retains 
 
 ## Core features and build status
 
-**Implemented:** Next.js App Router shell, shared styles/contracts, sandbox backend, local checks, and a fixture-driven AG Studio foundation at `/studio`. Live audit orchestration, custom Mirror widget and Auditor agent are not connected on this branch.
+| Capability | Current behavior |
+| --- | --- |
+| PayPal sandbox | Read-only plan listing and retrieval with cached OAuth. Plan reads retry once on HTTP 502, 503, or 504. |
+| Cross-page audit | Compare controlled Quillfox pricing and FAQ claims separately against one live plan. |
+| Promotional terms | Compare the initial consecutive free phases independently of a known paid introductory phase. Ambiguous schedules require review. |
+| Recurring terms | Compare fixed prices and collection cadence with exact decimal math. A matching rate on a finite plan requires review. |
+| Evidence | Inspect website quotes and PayPal settings side by side in AG Studio and export the full run as JSON. |
+| Corrected offer | Re-audit the seven-day preview against the same sandbox plan and open the new run in Studio. |
+| AI | Server-side OpenAI configuration enables extraction and Ask Auditor. Labeled audits and manual evidence inspection are available without a key. |
 
-| Planned feature | Expected behavior | Status |
-| --- | --- | --- |
-| Merchant pricing-page analysis | Read approved pricing, FAQ, and terms pages | Planned |
-| PayPal sandbox retrieval | Retrieve a specific sandbox plan by ID | Implemented; live retrieval verified November 5 |
-| Structured AI extraction | Extract price, currency, trial, frequency, fees, and source evidence | Implemented; live Quillfox extraction verified November 10 |
-| Trial and price checks | Detect supported discrepancies with deterministic comparisons | Implemented; unsupported pricing requires review |
-| Annual/monthly equivalence | Compare equivalent amounts while preserving billing cadence | Implemented for compatible fixed-price terms |
-| Evidence and explanations | Show source quotes beside retrieved PayPal fields | Planned |
-| AG Studio dashboard | Filter and inspect findings and source evidence | Fixture foundation at `/studio`; live adapter and severity semantics remain open |
-| Custom Auditor agent | Answer questions grounded in retrieved audit evidence | Planned |
-| Suggested corrections | Recommend human-reviewed changes without automatic writes | Planned |
+Live findings explain their priority using the verdict and billing field. The explanation describes why to investigate and does not estimate losses.
+
+Set `PLANMIRROR_SUBSCRIPTION_COUNTS=true` to show an optional count of active sandbox subscriptions associated with a flagged plan. PlanMirror requests up to five filtered pages and displays an unavailable state if it cannot verify a complete count. Subscription IDs and subscriber details are excluded from the audit. [PayPal subscription listing](https://developer.paypal.com/api/subscriptions/v1/subscriptions-list/)
+
+For automatic re-audits, register `/api/paypal/webhooks` on the sandbox app for `BILLING.PLAN.UPDATED` and `BILLING.PLAN.PRICING-CHANGE.ACTIVATED`. Configure the registered `PAYPAL_WEBHOOK_ID` and the single target `PAYPAL_SANDBOX_PLAN_ID` on the host. PayPal verifies the signature before a new cross-page audit runs. A successful delivery returns a Studio run ID for `/studio?run=…`. Recent duplicate deliveries reuse the existing run while it is in memory. Verification and deduplication are covered by mocked route checks. A hosted delivery and a live subscription count still need sandbox verification. [PayPal webhook integration](https://developer.paypal.com/api/rest/webhooks/rest/)
 
 ## Five demo scenarios — Quillfox
 
@@ -156,7 +158,7 @@ Set `OPENAI_API_KEY` in the host's server environment to enable extraction and A
 
 ### AG Studio demo acceptance
 
-The Quillfox demo should use a real PayPal sandbox plan ID and show the source URL, quoted website terms, and PayPal field behind each finding. The comparison engine decides match, mismatch, or needs review. The planned AG Studio dashboard will expose these findings through a custom evidence widget, cross-filterable views, and a themed layout. The Auditor agent should use the Studio Agent Framework to answer questions from those same records. The demo should show the mismatch clearing after the public offer or sandbox configuration is corrected and the audit is rerun.
+The live sandbox walkthrough was verified in Safari on November 11. The original audit returned one trial mismatch and one price match. The corrected preview returned two matches. **Compare pricing and FAQ** returned two mismatches and one match, including the stale FAQ's USD 49 rate against the USD 9.99 sandbox price. Hosted verification is still pending.
 
 See [Devpost's AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid).
 
@@ -185,7 +187,7 @@ Open `/studio` or choose **Studio** in the header. The page uses real AG Studio 
 
 Mixed findings covers the five README scenarios. Separate corrected, partial-evidence, simulated provider-failure, empty and no-audit samples expose uncertainty and recovery behavior. Sample URLs, plan IDs and timestamps are illustrative, not live retrieval evidence. **Download all evidence (JSON)** includes every finding and issue in the selected run even when visual filters are active; failed/not-started states have no exportable audit result.
 
-The fixture-only presentation envelope in `lib/studio/` wraps the shared `AuditFinding` without modifying financial rules. Configured/advertised strings are supplied by fixtures. A live adapter still needs agreement with Hozaif and Nilanee; never infer values from summaries. The evidence panel is ordinary React in this phase: the custom Mirror widget, cross-widget integration and grounded Auditor agent remain subsequent milestones.
+The Studio adapter builds its display values from the exact claims and PayPal snapshot used by the comparator. The workspace supports live runs and labeled fixtures, with a built-in evidence panel and an optional custom Mirror widget.
 
 ### Studio license and checks
 

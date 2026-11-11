@@ -8,6 +8,7 @@ export interface StudioFinding {
   advertisedDisplay?: string;
   configuredDisplay?: string;
   additionalWebsiteEvidence?: WebsiteEvidence[];
+  priority?: { level: "high" | "medium" | "review"; reason: string };
 }
 
 export interface StudioRun {
@@ -20,6 +21,7 @@ export interface StudioRun {
   issues: { code: string; message: string; claimId?: string; stage?: "plan" | "claims" }[];
   retrievedAt?: string;
   planId?: string;
+  activeSubscriptions?: number | null;
 }
 
 export type StatusFilter = "all" | AuditFinding["status"];

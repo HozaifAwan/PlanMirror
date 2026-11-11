@@ -46,7 +46,7 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
   const cycles = plan.billingCycles.map((cycle, index) => ({ cycle, index }))
     .sort((a, b) => a.cycle.sequence - b.cycle.sequence);
   const regular = cycles.at(-1);
-  const trials = cycles.slice(0, -1);
+  let trials = cycles.slice(0, -1);
   if (!regular || regular.cycle.tenure !== "REGULAR" || trials.length > 2 ||
       cycles.some(({ cycle }, index) => cycle.sequence !== index + 1) ||
       trials.some(({ cycle }) => cycle.tenure !== "TRIAL" || cycle.totalCycles === 0)) {
@@ -59,12 +59,20 @@ export const compareSubscriptionTerms: Comparator = ({ plan, claim }): AuditFind
     if (!trials.length) {
       return finding("mismatch", `Advertised trial: ${label}. PayPal has no trial cycle.`, "billingCycles");
     }
-    // A paid introductory phase does not extend the advertised free period.
-    // Aggregate only phases with the same known price.
+    // An explicitly free claim covers only the initial consecutive free phases.
+    const prices = trials.map(({ cycle }) => fixedPrice(cycle));
+    const initialPrice = prices[0];
+    if (claim.price && new Decimal(claim.price.value).isZero() && initialPrice &&
+        new Decimal(initialPrice.value).isZero() &&
+        prices.every(price => price?.currencyCode === initialPrice.currencyCode)) {
+      const firstPaid = prices.findIndex(price => price && !new Decimal(price.value).isZero());
+      if (firstPaid !== -1) trials = trials.slice(0, firstPaid);
+    }
+    // Other multi-phase claims require a common known price to combine durations.
     if (trials.length > 1) {
-      const prices = trials.map(({ cycle }) => fixedPrice(cycle));
-      const first = prices[0];
-      if (!first || prices.some((price) => !price || price.currencyCode !== first.currencyCode ||
+      const trialPrices = trials.map(({ cycle }) => fixedPrice(cycle));
+      const first = trialPrices[0];
+      if (!first || trialPrices.some((price) => !price || price.currencyCode !== first.currencyCode ||
           !new Decimal(price.value).eq(first.value))) {
         return finding("needs_review", `Advertised trial: ${label}. PayPal trial phases have different or unsupported pricing; their durations cannot be combined reliably.`, "billingCycles");
       }
