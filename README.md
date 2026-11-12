@@ -326,15 +326,13 @@ See [Team handoff](#team-handoff) for named owners and starting files.
 
 ## License and submission readiness
 
-**License status: unresolved.** This repository currently has no license file. Choosing and adding an appropriate open-source license for the team’s original work is an open task, not a completed step.
-
-The [official PayPal + AG Grid starter](https://github.com/paypaldev/hackathon-paypal-ag-grid-boilerplate) was inspected as a reference. Its visible root file listing and repository metadata did not establish a redistribution license. Do not assume public visibility grants reuse permission, copy its source, or apply MIT to third-party code. Obtain clear permission or independently implement the application; verify dependency and AG Studio terms separately and retain required notices. No starter source was copied for this documentation update.
+PlanMirror's original source and documentation are available under the [MIT License](LICENSE). Third-party packages, SDKs, and assets remain subject to their respective terms. The MIT license does not cover AG Studio itself or grant a production SDK license.
 
 Submission checklist, based on the [official rules](https://paypalaihackathon.devpost.com/rules):
 
 - [ ] Deliver a working application with central PayPal sandbox and AI integration.
 - [x] Make the code repository public with source, assets, and reproducible instructions.
-- [ ] Include a detectable open-source license after resolving ownership and third-party permissions.
+- [x] Include an open-source license for PlanMirror’s original code.
 - [x] Provide a project explanation and functional demo access through the hosted walkthrough above.
 - [ ] Provide a public YouTube demonstration video under three minutes showing the app working.
 - [ ] Prepare an AI-tools statement identifying tools/models, their roles in the app and development, and human verification; confirm the current submission form’s disclosure fields.
