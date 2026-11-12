@@ -25,7 +25,36 @@ const corrected: StudioRun = { id: correctedId, label: "Corrected sample", sourc
   record(correctedId, "monthly-price", { ...mixed.findings[1].finding, status: "match", summary: "Both supplied fixture values describe USD 19 per month.", website: website("USD 19 per month after your trial."), paypal: paypal("billingCycles[1].fixedPrice") }, "USD 19 / month", "USD 19 / month"),
 ] };
 const reviewId = "fixture-partial-v1";
+const billingCases = [
+  { id: "billing-frequency", label: "Billing frequency mismatch", field: "billing_interval", status: "mismatch", quote: "$9.99 billed monthly.", configured: "USD 9.99 billed yearly", path: "billingCycles[0].interval", summary: "The advertised monthly collection differs from the configured annual collection." },
+  { id: "annual-pricing", label: "Equivalent annual pricing", field: "recurring_price", status: "match", quote: "$8.25 per month, billed annually.", configured: "USD 99 billed yearly", path: "billingCycles[0].fixedPrice", summary: "The advertised monthly equivalent totals USD 99, collected annually in both cases." },
+  { id: "upfront-fee", label: "Upfront fee mismatch", field: "setup_fee", status: "mismatch", quote: "$9.99 per month with no setup fee.", configured: "USD 5 setup fee", path: "setupFee", summary: "PayPal configures a USD 5 setup fee despite the advertised promise of no setup fee." },
+  { id: "finite-billing", label: "Finite billing / review", field: "recurring_price", status: "needs_review", quote: "$9.99 per month.", configured: "USD 9.99 monthly for 3 payments", path: "billingCycles[0].totalCycles", summary: "The monthly amount agrees, but the advertised copy does not specify the configured three-payment limit." },
+  { id: "ambiguous-price", label: "Ambiguous price / review", field: "billing_interval", status: "needs_review", quote: "Plans start at $9.99.", configured: "USD 9.99 billed monthly", path: "billingCycles[0].interval", summary: "The advertised starting price does not establish a billing interval." },
+] as const;
+
+const billingSamples: StudioRun[] = billingCases.map((sample, index) => {
+  const id = `fixture-${sample.id}-v1`;
+  return {
+    id,
+    label: sample.label,
+    source: "fixture",
+    status: sample.status === "needs_review" ? "needs_review" : "completed",
+    description: "Scripted billing example with fictional website and PayPal evidence.",
+    issues: [],
+    findings: [record(id, sample.field, {
+      offerLabel: sample.label,
+      field: sample.field,
+      status: sample.status,
+      summary: sample.summary,
+      website: website(sample.quote),
+      paypal: { ...paypal(sample.path), planId: `P-ILLUSTRATIVE-BILLING-${index + 1}` },
+    }, sample.quote, sample.configured)],
+  };
+});
+
 export const studioRuns: StudioRun[] = [mixed, corrected,
+  ...billingSamples,
   { id: reviewId, label: "Partial evidence / review", source: "fixture", status: "needs_review", description: "Missing evidence and unsupported terms require human review; no financial verdict was produced.", issues: [{ code: "COMPARATOR_UNAVAILABLE", message: "No supported comparison was available for these terms." }], findings: [
     record(reviewId, "setup-fee", { offerLabel: "Unmapped", field: "setup_fee", status: "needs_review", summary: "The setup-fee claim has no mapped plan evidence.", website: website("A setup fee may apply.", "terms") }),
     record(reviewId, "interval", { offerLabel: "Missing Source", field: "billing_interval", status: "needs_review", summary: "The website evidence is unavailable; the configured interval alone cannot establish a match.", paypal: paypal("billingCycles[0].interval") }, undefined, "1 month"),

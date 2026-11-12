@@ -23,7 +23,7 @@ export default function Home() {
               </svg>
             </Link>
           </div>
-          <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status" data-state="demo-ready">Demo ready · Read-only sandbox auditing</p>
+          <p id="workspace-status" className="pm-caption pm-hero-note" data-testid="workspace-status"></p>
           <figure className="pm-overview-preview" aria-labelledby="preview-title" aria-describedby="preview-note">
             <div className="pm-preview-topline"><span className="pm-eyebrow">The promise meets the plan</span><span className="pm-preview-label">Illustrative sample</span></div>
             <h2 id="preview-title">Small differences.<br />A clearer picture.</h2>
