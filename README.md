@@ -154,6 +154,8 @@ Deploy as a Node.js application using `npm ci`, `npm run build`, and `npm start`
 
 Set `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENVIRONMENT=sandbox`, and a random `PLANMIRROR_SANDBOX_READ_TOKEN` of at least 32 characters in the hosting provider's server environment. Use a dedicated sandbox merchant with demo plans. Set `PAYPAL_SANDBOX_PLAN_ID` to select Quillfox Pro by default.
 
+Set `PLANMIRROR_PUBLIC_ORIGIN` to the public site origin so evidence exports contain judge-accessible pricing, FAQ, and corrected-offer links. Quillfox keeps the latest three run links on the page during the walkthrough.
+
 Set `OPENAI_API_KEY` in the host's server environment to enable extraction and Ask Auditor. Judges use the hosted URL without entering credentials. A browser SDK license may be configured with `AG_STUDIO_LICENSE_KEY`. Verify the deployed Quillfox audit and Studio handoff in a fresh browser before sharing the link.
 
 ### AG Studio demo acceptance

@@ -3,7 +3,11 @@ import { safeEvidenceUrl } from "../../lib/studio/types";
 import type { WebsiteEvidence } from "../../lib/audit/types";
 
 function WebsiteReference({ evidence }: { evidence: WebsiteEvidence }) {
-  const href = safeEvidenceUrl(evidence.url);
+  const url = safeEvidenceUrl(evidence.url);
+  const canonical = url ? new URL(url) : undefined;
+  const href = canonical?.origin === "https://planmirror.local"
+    && ["/quillfox", "/quillfox/faq"].includes(canonical.pathname)
+    ? canonical.pathname + canonical.hash : url;
   return <><blockquote>{evidence.quote}</blockquote><p>Source: {href ? <a href={href}>{evidence.url}</a> : <span>{evidence.url} (link unavailable)</span>}</p></>;
 }
 

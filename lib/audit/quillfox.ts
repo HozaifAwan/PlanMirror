@@ -46,9 +46,9 @@ export const quillfoxCorrectedOffer = {
   quote: "7 days free, then USD 9.99 per month.",
 } as const;
 
-export function quillfoxClaims(corrected = false): CandidateClaim[] {
+export function quillfoxClaims(corrected = false, sourceUrl = quillfoxSourceUrl): CandidateClaim[] {
   const offer = corrected ? quillfoxCorrectedOffer : quillfoxOffer;
-  const evidence = { url: corrected ? `${quillfoxSourceUrl}#corrected-offer` : quillfoxSourceUrl, quote: offer.quote };
+  const evidence = { url: corrected ? `${sourceUrl}#corrected-offer` : sourceUrl, quote: offer.quote };
   const trial: AdvertisedSubscriptionClaim = {
     field: "trial",
     offerLabel: quillfoxOffer.name,
@@ -69,9 +69,9 @@ export function quillfoxClaims(corrected = false): CandidateClaim[] {
   ];
 }
 
-export function quillfoxCrossPageClaims(): CandidateClaim[] {
+export function quillfoxCrossPageClaims(sourceUrl = quillfoxSourceUrl): CandidateClaim[] {
   return [
-    ...quillfoxClaims(),
+    ...quillfoxClaims(false, sourceUrl),
     {
       id: "quillfox-faq-monthly",
       claim: {
@@ -79,7 +79,7 @@ export function quillfoxCrossPageClaims(): CandidateClaim[] {
         offerLabel: quillfoxOffer.name,
         price: { value: quillfoxFaqStalePrice, currencyCode: quillfoxOffer.currency },
         quotedInterval: { unit: "MONTH", count: 1 },
-        evidence: { url: `${quillfoxSourceUrl}/faq#stale-note`, quote: quillfoxFaqStaleQuote },
+        evidence: { url: `${sourceUrl}/faq#stale-note`, quote: quillfoxFaqStaleQuote },
       },
     },
   ];
