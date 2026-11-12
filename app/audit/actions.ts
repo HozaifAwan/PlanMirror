@@ -1,7 +1,7 @@
 "use server";
 
 import { extractionSourceSchema } from "../../lib/orchestration/extracted-audit";
-import { readMerchantPricing } from "../../lib/audit/merchant-page";
+import { approvedMerchantPricingUrl, readMerchantPricing } from "../../lib/audit/merchant-page";
 import { z } from "zod";
 import { extractOffers } from "../../lib/ai/extract";
 import { authorize } from "../../lib/backend/authorize";
@@ -75,6 +75,9 @@ export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<R
     if (!parsed.success) return { ok: false, error: "Enter a valid pricing page URL or choose a valid Sandbox plan.", code: "invalid_input" };
     if (parsed.data.mode === "custom") {
       requestLimits.checkRequest();
+      if (!approvedMerchantPricingUrl(parsed.data.sourceUrl)) {
+        return { ok: false, error: "This pricing site is not enabled for this demo. Use the configured demo URL or try the Quillfox walkthrough.", code: "source_not_approved" };
+      }
       if (!process.env.OPENAI_API_KEY?.trim()) {
         return { ok: false, error: "AI extraction is unavailable.", code: "ai_unavailable" };
       }
@@ -92,7 +95,7 @@ export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<R
         try {
           sourceText = await readMerchantPricing(sourceUrl);
         } catch {
-          return { ok: false as const, error: "Could not read this pricing page. Try a supported pricing URL.", code: "source_unavailable" };
+          return { ok: false as const, error: "The approved pricing page could not be read. Use a direct HTTPS page with pricing visible in the page text, or try the Quillfox walkthrough.", code: "source_unavailable" };
         }
         audit = { mode: "custom", planId: plan.data, source: { sourceUrl, sourceText } };
       } else {

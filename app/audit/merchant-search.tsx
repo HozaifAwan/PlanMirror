@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { runPlanAudit, type RunAuditResult } from "./actions";
 
-export default function MerchantSearch() {
+export default function MerchantSearch({ demoUrl }: { demoUrl?: string }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<RunAuditResult>();
 
@@ -26,9 +26,10 @@ export default function MerchantSearch() {
   return (
     <>
       <form className="pm-audit-form" onSubmit={submit} aria-busy={busy}>
-        <label>Website pricing URL<input name="sourceUrl" type="url" placeholder="https://example.com/pricing" maxLength={2048} required disabled={busy} /></label>
+        <label>Website pricing URL<input name="sourceUrl" type="url" placeholder="https://example.com/pricing" defaultValue={demoUrl} maxLength={2048} required disabled={busy} /></label>
         <button className="pm-primary-action" type="submit" disabled={busy}>{busy ? "Running audit…" : "Run audit"}</button>
       </form>
+      <p><Link href="/quillfox">Try the Quillfox sandbox walkthrough</Link></p>
       {result?.ok === false && <p role="alert">{result.error}</p>}
       {result?.ok && (
         <div role="status">

@@ -12,12 +12,16 @@ function visibleText(node: DefaultTreeAdapterTypes.Node): string {
   return "tagName" in node && blockTags.has(node.tagName) ? `\n${content}\n` : content;
 }
 
-export async function readMerchantPricing(sourceUrl: string, fetchPage = fetch): Promise<string> {
-  const url = new URL(sourceUrl);
+export function approvedMerchantPricingUrl(sourceUrl: string): URL | undefined {
+  const url = URL.parse(sourceUrl);
+  if (!url || url.protocol !== "https:" || url.username || url.password) return undefined;
   const allowed = (process.env.PLANMIRROR_MERCHANT_ORIGINS ?? "").split(",").map(origin => origin.trim());
-  if (url.protocol !== "https:" || url.username || url.password || !allowed.includes(url.origin)) {
-    throw new Error("Unsupported pricing page.");
-  }
+  return allowed.includes(url.origin) ? url : undefined;
+}
+
+export async function readMerchantPricing(sourceUrl: string, fetchPage = fetch): Promise<string> {
+  const url = approvedMerchantPricingUrl(sourceUrl);
+  if (!url) throw new Error("Unsupported pricing page.");
   const response = await fetchPage(url, {
     cache: "no-store", redirect: "error", signal: AbortSignal.timeout(7000),
     headers: { Accept: "text/html, text/plain" },

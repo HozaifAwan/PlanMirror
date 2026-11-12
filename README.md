@@ -148,6 +148,10 @@ The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server share
 3. Back on Quillfox, select **Re-audit corrected offer**. The preview promises seven days and reads the same sandbox plan again. Open the new result in AG Studio to inspect the updated verdict. Both audit runs remain separately inspectable.
 4. With OpenAI configured, enable **Extract Quillfox advertised terms with AI** before running the audit. The server checks the extracted evidence against the offer copy. Without OpenAI, the audit compares the published Quillfox claims with the live sandbox plan.
 
+### Configure Merchant Search
+
+Merchant Search at `/audit` compares a pricing page with the sandbox plan selected by `PLANMIRROR_MERCHANT_PLAN_ID`. Configure the matching page's exact HTTPS origin in `PLANMIRROR_MERCHANT_ORIGINS` and set `PLANMIRROR_MERCHANT_DEMO_URL` to the direct pricing page to prefill it for judges. Use a URL whose server response contains the pricing text and returns directly without redirects. The URL audit uses the server-side OpenAI key. Quillfox provides a separate walkthrough using published demo claims.
+
 ### Host the judge demo
 
 Deploy as a Node.js application using `npm ci`, `npm run build`, and `npm start`. Use one long-running instance for this prototype because audit runs and agent limits are stored in process memory. Restarting the instance clears previous run links.
