@@ -114,3 +114,21 @@ test('finite recurring evidence displays the exact collection limit in Studio', 
   assert.equal(renewal.finding.paypal.fieldPath, 'billingCycles[1].totalCycles');
   assert.equal(renewal.configuredDisplay, '12 regular collections');
 });
+
+test('trial mismatch carries the website and PayPal payment timeline into Studio', async () => {
+  const configured = structuredClone(plan);
+  configured.setupFee = { value: '0', currencyCode: 'USD' };
+  configured.billingCycles[1].fixedPrice.value = '9.99';
+  const { run } = await runStudioAudit({ planId: plan.id, mode: 'labeled' }, {
+    readPlan: async () => configured,
+    extract: async () => { throw new Error('Published claims do not need extraction'); },
+  });
+  const record = run.findings.find(record => record.claimId === 'quillfox-trial');
+  assert.equal(record.finding.status, 'mismatch');
+  assert.match(record.finding.website.quote, /30 days free/);
+  assert.match(record.paymentTimeline.advertised.find(step => step.label === 'First payment').detail, /After 30 days/);
+  const first = record.paymentTimeline.configured.find(step => step.label === 'First scheduled billing payment');
+  assert.equal(first.detail, 'After 7 days · USD 9.99');
+  assert.ok(first.fields.includes('billingCycles[0].interval'));
+  assert.ok(first.fields.includes('billingCycles[1].fixedPrice'));
+});
