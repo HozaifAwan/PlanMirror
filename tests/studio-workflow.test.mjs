@@ -46,7 +46,7 @@ test('custom merchant pricing reaches Studio with the original evidence and sele
   const source = {
     sourceUrl: 'https://example.com/acme/pricing',
     sourceText: 'Acme Plus offers a 30-day free trial.',
-
+    offerLabel: 'Acme Plus',
   };
   const { run } = await runStudioAudit({ planId: plan.id, mode: 'custom', source }, {
     readPlan: async id => {
@@ -54,7 +54,7 @@ test('custom merchant pricing reaches Studio with the original evidence and sele
       return { ...plan, name: 'Acme Plus' };
     },
     extract: async input => {
-      assert.deepEqual(input, { ...source, offerLabel: undefined });
+      assert.deepEqual(input, source);
       return { status: 'ok', claims: [{
         ...quillfoxClaims()[0].claim,
         offerLabel: 'Acme Plus',

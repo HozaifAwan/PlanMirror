@@ -5,6 +5,12 @@ import { answerCheckBot, CHECK_BOT_INSTRUCTIONS, CHECK_BOT_MODEL } from '../lib/
 const input = { pathname: '/quillfox', markdown: '# Quillfox\n30 days free', message: 'How do I audit?', history: [] };
 const completed = text => ({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text }] }] });
 
+test('page guide directs merchant audits without a fixed demo merchant', () => {
+  assert.ok(!/quillfox/i.test(CHECK_BOT_INSTRUCTIONS));
+  assert.match(CHECK_BOT_INSTRUCTIONS, /Merchant Search/);
+  assert.match(CHECK_BOT_INSTRUCTIONS, /corresponding PayPal sandbox plan/);
+});
+
 test('chat uses fixed instructions, bounded lightweight configuration, and separate untrusted page data', async () => {
   let calls = 0;
   const result = await answerCheckBot({ ...input, history: [{ role: 'user', text: 'Where am I?' }, { role: 'assistant', text: 'Quillfox.' }] }, {

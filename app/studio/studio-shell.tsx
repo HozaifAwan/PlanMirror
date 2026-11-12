@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { studioRuns } from "../../lib/studio/fixtures";
 import { evidenceReport, visibleFindings, type FieldFilter, type LiveRunState, type StatusFilter, type StudioRun } from "../../lib/studio/types";
 import Evidence from "./evidence";
 import Mirror from "./mirror";
@@ -18,6 +17,7 @@ const overview = [
 ] as const;
 const fields = ["trial", "recurring_price", "billing_interval", "setup_fee"] as const;
 const readable = (value: string) => value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+const emptyRun: StudioRun = { id: "no-audit", label: "No audit loaded", source: "live", status: "not_started", description: "Start a merchant audit and open its result in Studio to inspect your website and PayPal evidence.", findings: [], issues: [] };
 
 export default function StudioShell({
   licenseKey,
@@ -26,6 +26,7 @@ export default function StudioShell({
   liveRunState = "none",
   requestedRunId,
   initialSampleId,
+  sampleRuns = [],
 }: {
   licenseKey?: string;
   aiEnabled?: boolean;
@@ -33,9 +34,10 @@ export default function StudioShell({
   liveRunState?: LiveRunState;
   requestedRunId?: string;
   initialSampleId?: string;
+  sampleRuns?: StudioRun[];
 }) {
-  const availableRuns = liveRun ? [liveRun, ...studioRuns] : studioRuns;
-  const initialRun = liveRun ?? studioRuns.find(item => item.id === initialSampleId) ?? studioRuns[0];
+  const availableRuns = liveRun ? [liveRun] : sampleRuns.length ? sampleRuns : [emptyRun];
+  const initialRun = liveRun ?? sampleRuns.find(item => item.id === initialSampleId) ?? availableRuns[0];
   const [runId, setRunId] = useState(initialRun.id);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [field, setField] = useState<FieldFilter>("all");
@@ -74,20 +76,20 @@ export default function StudioShell({
     </header>
     {liveRunState === "expired" && (
       <p className="studio-issue-summary" role="status" data-testid="live-run-expired">
-        The live audit run{requestedRunId ? ` ${requestedRunId}` : ""} expired or was not found. Sample scenarios are still available below.
+        The live audit run{requestedRunId ? ` ${requestedRunId}` : ""} expired or was not found. Start a new merchant audit to load fresh evidence.
       </p>
     )}
     <StudioMarkdown run={run} availableRuns={availableRuns} status={status} field={field} view={view} selectedId={selected?.id} liveRunState={liveRunState} />
 
     <section aria-label="Audit run" className="studio-run">
       <div className="studio-run-toolbar">
-        <label className="studio-scenario">Audit scenario<select value={run.id} onChange={(event) => {
+        <label className="studio-scenario">Audit run<select value={run.id} onChange={(event) => {
           const next = availableRuns.find((item) => item.id === event.target.value)!;
           setRunId(next.id); setSelectedId(next.findings[0]?.id); setStatus("all"); setField("all");
         }}>{availableRuns.map((item) => <option key={item.id} value={item.id}>{item.source === "live" ? `Live audit · ${item.label}` : item.label}</option>)}</select></label>
         <div className="studio-export"><button className="pm-primary-action" onClick={download} aria-describedby="export-scope" disabled={run.status === "not_started" || run.status === "failed"}>Export all evidence <span aria-hidden="true">↗</span></button><p id="export-scope">JSON · All run findings, regardless of filters</p></div>
       </div>
-      <div className="studio-run-status"><p><span className={`studio-run-dot studio-${run.status}`} aria-hidden="true" /><strong>{readable(run.status)}</strong><span className="studio-meta">Source: {run.source === "live" ? "live sandbox audit" : "fixture"}</span></p><details><summary>Run details</summary><p>{run.description}</p>{run.activeSubscriptions !== undefined && <p>{run.activeSubscriptions === null ? "Active sandbox subscription count unavailable." : `${run.activeSubscriptions} active sandbox subscriptions associated with this plan. Association does not establish a billing impact.`}</p>}{run.retrievedAt && <p className="studio-meta">Retrieved: <time dateTime={run.retrievedAt}>{run.retrievedAt}</time></p>}{run.issues.length > 0 && <ul>{run.issues.map((issue) => <li key={`${issue.code}-${issue.claimId ?? "run"}`}><strong>{issue.code}:</strong> {issue.message}</li>)}</ul>}</details></div>
+      <div className="studio-run-status"><p><span className={`studio-run-dot studio-${run.status}`} aria-hidden="true" /><strong>{readable(run.status)}</strong><span className="studio-meta">Source: {run.status === "not_started" ? "no audit data" : run.source === "live" ? "live sandbox audit" : "fixture"}</span></p><details><summary>Run details</summary><p>{run.description}</p>{run.activeSubscriptions !== undefined && <p>{run.activeSubscriptions === null ? "Active sandbox subscription count unavailable." : `${run.activeSubscriptions} active sandbox subscriptions associated with this plan. Association does not establish a billing impact.`}</p>}{run.retrievedAt && <p className="studio-meta">Retrieved: <time dateTime={run.retrievedAt}>{run.retrievedAt}</time></p>}{run.issues.length > 0 && <ul>{run.issues.map((issue) => <li key={`${issue.code}-${issue.claimId ?? "run"}`}><strong>{issue.code}:</strong> {issue.message}</li>)}</ul>}</details></div>
       {run.issues.length > 0 && <p className="studio-issue-summary">{run.issues.length} run {run.issues.length === 1 ? "issue" : "issues"} · {run.issues[0].message}</p>}
       {(run.status === "not_started" || run.status === "failed") && <p className="studio-issue-summary">Evidence export is unavailable because this run has no audit result.</p>}
     </section>

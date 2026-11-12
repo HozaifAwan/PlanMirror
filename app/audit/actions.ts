@@ -65,7 +65,7 @@ export async function listSandboxPlans(): Promise<ListPlansResult> {
 
 const auditInput = z.union([
   z.strictObject({ planId: planIdSchema, mode: z.enum(["labeled", "extract", "corrected", "cross_page"]) }),
-  z.strictObject({ mode: z.literal("custom"), sourceUrl: extractionSourceSchema.shape.sourceUrl.max(2048) }),
+  z.strictObject({ mode: z.literal("custom"), sourceUrl: extractionSourceSchema.shape.sourceUrl.max(2048), planId: planIdSchema, offerLabel: extractionSourceSchema.shape.offerLabel.optional() }),
 ]);
 
 export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<RunAuditResult> {
@@ -85,16 +85,14 @@ export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<R
     return await requestLimits.runProviderWork(async () => {
       let audit: Parameters<typeof runStudioAudit>[0];
       if (parsed.data.mode === "custom") {
-        const plan = planIdSchema.safeParse(process.env.PLANMIRROR_MERCHANT_PLAN_ID);
-        if (!plan.success) return { ok: false as const, error: "Website audits are unavailable until a Sandbox test plan is configured.", code: "plan_unavailable" };
-        const { sourceUrl } = parsed.data;
+        const { sourceUrl, planId, offerLabel } = parsed.data;
         let sourceText: string;
         try {
           sourceText = await readMerchantPricing(sourceUrl);
         } catch {
           return { ok: false as const, error: "Could not read this pricing page. Try a supported pricing URL.", code: "source_unavailable" };
         }
-        audit = { mode: "custom", planId: plan.data, source: { sourceUrl, sourceText } };
+        audit = { mode: "custom", planId, source: { sourceUrl, sourceText, offerLabel } };
       } else {
         audit = parsed.data;
       }

@@ -5,7 +5,7 @@ import Evidence from "./evidence";
 /** Complete semantic counterpart of the virtualized workspace, used by AgentView. */
 function RunEvidence({ run, status, field, selected }: { run: StudioRun; status: StatusFilter; field: FieldFilter; selected: boolean }) {
   const visibleIds = new Set(visibleFindings(run, status, field).map(record => record.id));
-  const sampleLabel = run.source === "live" ? "Live sandbox audit data" : "Illustrative sample data";
+  const sampleLabel = run.status === "not_started" ? "No audit data loaded" : run.source === "live" ? "Live sandbox audit data" : "Illustrative sample data";
   return <section>
     <h2>Audit run context</h2>
     <p>Run: {run.label} · Run ID: {run.id} · Status: {run.status} · Source: {run.source} · {sampleLabel}</p>
@@ -33,7 +33,7 @@ export default function StudioMarkdown({ run, availableRuns, status, field, view
   return <section data-markdown-only className="studio-markdown">
     <h2>Current workspace state</h2>
     <p>Available records views: Audit workspace; Accessible records. The workspace includes a clickable verdict breakdown, a billing-field by verdict count matrix, and an evidence table. Studio chart selections and native filters apply inside the workspace; they do not narrow this complete Markdown evidence or the full-run export. Customize dashboard changes views and layout only, never audit findings or PayPal settings. Available status filters: All statuses; Mismatches; Needs review; Matches. Available field filters: All fields; Trial; Recurring price; Billing interval; Setup fee.</p>
-    <p>Data availability: {liveRuns.length ? "a live sandbox audit run is loaded together with fixture scenarios." : "all supplied fixture scenarios are included below. No live provider data is loaded or pending in this workspace."}</p>
+    <p>Data availability: {liveRuns.length ? "the selected live sandbox audit run is loaded." : "no live audit result is loaded. Start a merchant audit to load evidence."}</p>
     {liveRunState === "expired" && <p>Live run handoff: the requested run id expired or was not found.</p>}
     <p>Selected run ID: {run.id}. Current records view: {view}. Selected finding ID: {selectedId ?? "None"}. Active status filter: {status}. Active field filter: {field}.</p>
     <h2>Selected run</h2>

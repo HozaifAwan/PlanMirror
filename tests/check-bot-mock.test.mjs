@@ -4,12 +4,13 @@ import { mockCheckBotReply } from "../lib/frontend/check-bot-mock.ts";
 
 test("check bot mock cites page content without inventing prices", () => {
   const reply = mockCheckBotReply({
-    pathname: "/quillfox",
+    pathname: "/audit",
     message: "What is the price?",
-    pageMarkdown: "# Quillfox Pro\n\n30 days free, then USD 9.99 per month.",
+    pageMarkdown: "# Acme Pro\n\n30 days free, then USD 9.99 per month.",
   });
   assert.match(reply, /USD 9\.99/);
-  assert.match(reply, /preview of the PlanMirror Auditor/i);
+  assert.match(reply, /scripted PlanMirror page guide/i);
+  assert.ok(!/quillfox/i.test(reply));
   assert.ok(!reply.includes("19.99"));
 });
 

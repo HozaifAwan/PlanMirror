@@ -17,7 +17,6 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
       liveRun={liveRun}
       liveRunState={liveRunState}
       requestedRunId={runId}
-      initialSampleId="fixture-not-started-v1"
     />
   );
 }
