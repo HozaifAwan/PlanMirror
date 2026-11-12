@@ -316,12 +316,12 @@ See [Team handoff](#team-handoff) for named owners and starting files.
 
 - Keep API keys, PayPal secrets, and bearer tokens server-side. Redact sensitive logs and use least-privilege access.
 - Require authorization and rate limits on audit and AI routes before exposing them publicly. Bound request sizes, fetch time, and AI usage.
-- Scrape only controlled, explicitly allowlisted merchant URLs. Reject local/private network destinations and revalidate redirects to prevent server-side request forgery. Respect site permissions and access restrictions.
+- Merchant Search reads bounded HTML or plain text from direct public HTTPS URLs. It rejects private network destinations and redirects. Respect site permissions and access restrictions.
 - Treat fetched website text as untrusted data, never as agent instructions. Do not let page content authorize tool calls or price modifications.
 - Sandbox testing is separate from production billing; the demo must not use production credentials or charge real customers.
 - Every financial discrepancy needs actual source evidence and retrieved billing data. AI extraction can be wrong; retain confidence/uncertainty and allow human review.
 - Different currencies, calendar units, taxes, regional offers, quantities, discounts, and subscription overrides can change the conclusion. Do not assume equivalence without matching context.
-- Price modifications require human approval. The planned initial auditor has no automatic price-write behavior.
+- The auditor is read-only. Merchants apply billing changes separately.
 - PlanMirror is not a legal-compliance certification service and makes no guarantee of FTC compliance or dispute prevention.
 
 ## License and submission readiness
@@ -333,9 +333,9 @@ The [official PayPal + AG Grid starter](https://github.com/paypaldev/hackathon-p
 Submission checklist, based on the [official rules](https://paypalaihackathon.devpost.com/rules):
 
 - [ ] Deliver a working application with central PayPal sandbox and AI integration.
-- [ ] Make the code repository public with all necessary source, assets, and reproducible instructions. Visibility remains private until the owner approves changing it.
+- [x] Make the code repository public with source, assets, and reproducible instructions.
 - [ ] Include a detectable open-source license after resolving ownership and third-party permissions.
-- [ ] Provide a clear project explanation and functional demo access, through complete run instructions or a hosted demo.
+- [x] Provide a project explanation and functional demo access through the hosted walkthrough above.
 - [ ] Provide a public YouTube demonstration video under three minutes showing the app working.
 - [ ] Prepare an AI-tools statement identifying tools/models, their roles in the app and development, and human verification; confirm the current submission form’s disclosure fields.
 - [ ] Recheck the submission form, official rules, and any sponsor-specific requirements before submission.
