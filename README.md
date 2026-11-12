@@ -149,7 +149,16 @@ For local development, configure `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` f
 
 The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server shares an OAuth token between concurrent reads, refreshes it before expiry, and retries a rejected token once. Plan details are fetched fresh for every audit. The response contains normalized billing cycles, decimal price strings, and retrieval time. Missing fixed prices, tiered pricing, taxes, and quantity-dependent terms require explicit handling by the comparison engine. An OAuth or plan retrieval error produces an error response rather than sample billing data.
 
-### Run the Quillfox demo
+### Try the hosted demo
+
+1. Open [PlanMirror Merchant Search](https://planmirror.onrender.com/audit) and paste the [Quillfox pricing URL](https://quillfox.onrender.com/index.html#pricing).
+2. Select **Extract offers** and choose **Quillfox Pro**. Check the source quote, which advertises 14 days free, then USD 7.99 per month.
+3. Select **Quillfox Pro** from the connected PayPal sandbox test account, select **Compare**, and open the result in AG Studio.
+4. Inspect the trial mismatch and the first-payment timeline. The sandbox configuration schedules its first USD 9.99 payment after seven days. Expand **PayPal fields** to see the settings behind the timeline.
+
+The hosted demo uses the team's sandbox. For an unrelated public URL, inspect the extracted offer on its own. A real billing audit requires authorized access to that merchant's corresponding plan.
+
+### Run the built-in Quillfox walkthrough
 
 1. Open **Quillfox**, select the active **Quillfox Pro** sandbox plan, and select **Run Audit**.
 2. Open the result in **AG Studio**. Inspect the trial mismatch and compare the published quote with the PayPal billing settings. Export the complete evidence from the workspace.
@@ -174,7 +183,7 @@ Set `OPENAI_API_KEY` in the host's server environment to enable extraction and A
 
 ### AG Studio demo acceptance
 
-The live sandbox walkthrough was verified in Safari on November 11. The original audit returned one trial mismatch and one price match. The corrected preview returned two matches. **Compare pricing and FAQ** returned two mismatches and one match, including the stale FAQ's USD 49 rate against the USD 9.99 sandbox price. Hosted verification is still pending.
+The live sandbox walkthrough was verified in Safari on November 11. The original audit returned one trial mismatch and one price match. The corrected preview returned two matches. **Compare pricing and FAQ** returned two mismatches and one match, including the stale FAQ's USD 49 rate against the USD 9.99 sandbox price. The separate hosted Merchant Search walkthrough uses the external Quillfox pricing page and the current 14-day offer.
 
 See [Devpost's AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid).
 
@@ -331,7 +340,7 @@ Submission checklist, based on the [official rules](https://paypalaihackathon.de
 - [ ] Prepare an AI-tools statement identifying tools/models, their roles in the app and development, and human verification; confirm the current submission form’s disclosure fields.
 - [ ] Recheck the submission form, official rules, and any sponsor-specific requirements before submission.
 
-The AI-tools statement is a team documentation deliverable; do not treat an unverified disclosure format as a quoted rule. Live local audit results are documented above. A public video, hosted deployment, and completed submission are not claimed here.
+The AI-tools statement is a team documentation deliverable; do not treat an unverified disclosure format as a quoted rule. Live local audit results are documented above. The hosted app is linked above. The status of the public video and final submission is separate.
 
 ## Official documentation
 
