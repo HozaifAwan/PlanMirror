@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { StudioFinding } from "../../lib/studio/types";
 
 /** Compact advertised-vs-configured mirror for the selected finding. */
-export default function Mirror({ record }: { record: StudioFinding }) {
+export default function Mirror({ record, compact = false }: { record: StudioFinding; compact?: boolean }) {
   const titleId = useId();
   const status = record.finding.status === "needs_review" ? "Needs review" : record.finding.status === "match" ? "Match" : "Mismatch";
   return (
@@ -22,7 +22,9 @@ export default function Mirror({ record }: { record: StudioFinding }) {
         <span className="studio-mirror-connector" aria-hidden="true">↔</span>
         <div className="studio-mirror-pane studio-mirror-configured">
           <p className="studio-mirror-label">Configured</p>
-          <p className="studio-mirror-value">{record.configuredDisplay ?? "Configured value unavailable"}</p>
+          {compact && record.configuredDisplay?.includes(" | ")
+            ? <ul className="studio-mirror-phases">{record.configuredDisplay.split(" | ").map((phase, index) => <li key={index}>{phase}</li>)}</ul>
+            : <p className="studio-mirror-value">{record.configuredDisplay ?? "Configured value unavailable"}</p>}
         </div>
       </div>
     </section>
