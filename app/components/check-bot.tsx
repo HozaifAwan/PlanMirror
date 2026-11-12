@@ -337,6 +337,10 @@ export default function CheckBot({ getPageContext, aiEnabled = false }: { getPag
           if (event.key === "Escape") setOpen(false);
         }}
       >
+        <span className="pm-check-bot-arm pm-check-bot-arm-left" aria-hidden="true" />
+        <span className="pm-check-bot-arm pm-check-bot-arm-right" aria-hidden="true" />
+        <span className="pm-check-bot-feet" aria-hidden="true" />
+        <span className="pm-check-bot-glass" aria-hidden="true" />
         <span className="pm-check-bot-character" aria-hidden="true">
           <span className="pm-check-bot-eye" />
           <span className="pm-check-bot-eye" />

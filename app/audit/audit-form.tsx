@@ -26,6 +26,7 @@ export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean })
   const [state, setState] = useState<UiState>({ kind: "loading_plans" });
   const [pending, startTransition] = useTransition();
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [recentRuns, setRecentRuns] = useState<Extract<RunAuditResult, { ok: true }>[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -76,6 +77,7 @@ export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean })
         setState({ kind: "failed", plans, planId, mode, error: result.error, code: result.code });
         return;
       }
+      setRecentRuns(previous => [result, ...previous].slice(0, 3));
       setState({ kind: "success", plans, planId, mode, result });
     });
   }
@@ -157,6 +159,21 @@ export default function AuditForm({ aiEnabled = true }: { aiEnabled?: boolean })
           disabled={busy || (state.kind !== "success" && state.kind !== "failed")}
           onClick={() => audit("corrected")}>Re-audit corrected offer</button>
       </section>
+
+      {recentRuns.length > 1 && (
+        <section aria-labelledby="recent-audits">
+          <h3 id="recent-audits">Recent audits</h3>
+          <ul>
+            {recentRuns.map(({ run, runId }) => {
+              const counts = countByStatus(run);
+              return <li key={runId}>
+                <Link href={`/studio?run=${runId}`}>{run.label}</Link>
+                {" · "}{counts.mismatch} mismatches, {counts.needs_review} to review, {counts.match} matches
+              </li>;
+            })}
+          </ul>
+        </section>
+      )}
 
       {state.kind === "auditing" && (
         <p className="pm-audit-status" role="status" data-testid="audit-status">Running audit against the selected sandbox plan…</p>

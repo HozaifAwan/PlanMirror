@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:frontend": "node --test tests/frontend.test.mjs",
+    "test:frontend": "node --import tsx --test tests/frontend.test.mjs",
     "test:routes": "node scripts/test-built-routes.mjs"
   },
   "dependencies": {
