@@ -287,7 +287,8 @@ test('icon sidebar expands on hover and focus, collapses on leave and selection,
     assert.equal(dom.window.document.querySelector('[data-testid="navigation-toggle"]'), null);
     assert.equal(sidebar.hidden, false);
     assert.equal(sidebar.dataset.expanded, 'false');
-    assert.deepEqual(Array.from(links, link => link.getAttribute('aria-label')), ['Overview', 'Quillfox', 'AG Studio']);
+    assert.deepEqual(Array.from(links, link => link.getAttribute('aria-label')), ['Overview', 'Merchant Search', 'AG Studio']);
+    assert.equal(links[1].getAttribute('href'), '/audit');
     assert.equal(dom.window.getComputedStyle(shell).gridTemplateColumns, '3rem minmax(0, 1fr)');
     const studioLink = Array.from(links).find(link => link.getAttribute('aria-label') === 'AG Studio');
     assert.equal(studioLink.getAttribute('aria-current'), 'page');

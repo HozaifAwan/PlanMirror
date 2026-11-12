@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { runStudioAudit } from '../lib/studio/audit-workflow.ts';
 import { quillfoxClaims } from '../lib/audit/quillfox.ts';
+import { readMerchantPricing } from '../lib/audit/merchant-page.ts';
 
 const plan = {
   id: 'P-DEMO123', productId: 'PROD-DEMO', name: 'Quillfox Pro', status: 'ACTIVE',
@@ -39,6 +40,52 @@ test('AI extraction uses the existing validated source-mode adapter', async () =
   assert.equal(source.offerLabel, 'Quillfox Pro');
   assert.ok(run.findings.every(record => source.sourceText.includes(record.finding.website.quote)));
   assert.ok(run.findings.every(record => record.claimId.startsWith('extracted-')));
+});
+
+test('custom merchant pricing reaches Studio with the original evidence and selected plan', async () => {
+  const source = {
+    sourceUrl: 'https://example.com/acme/pricing',
+    sourceText: 'Acme Plus offers a 30-day free trial.',
+    offerLabel: 'Acme Plus',
+  };
+  const { run } = await runStudioAudit({ planId: plan.id, mode: 'custom', source }, {
+    readPlan: async id => {
+      assert.equal(id, plan.id);
+      return { ...plan, name: 'Acme Plus' };
+    },
+    extract: async input => {
+      assert.deepEqual(input, source);
+      return { status: 'ok', claims: [{
+        ...quillfoxClaims()[0].claim,
+        offerLabel: source.offerLabel,
+        evidence: { url: source.sourceUrl, quote: source.sourceText },
+      }] };
+    },
+  });
+  assert.equal(run.label, 'Acme Plus');
+  assert.equal(run.findings[0].finding.status, 'mismatch');
+  assert.equal(run.findings[0].finding.website.quote, source.sourceText);
+  assert.equal(run.findings[0].finding.website.url, source.sourceUrl);
+  assert.equal(run.findings[0].finding.paypal.planId, plan.id);
+});
+
+test('merchant page reader extracts bounded HTML from the configured origin only', async () => {
+  const previous = process.env.PLANMIRROR_MERCHANT_ORIGINS;
+  process.env.PLANMIRROR_MERCHANT_ORIGINS = 'https://example.com';
+  try {
+    const fetchPage = async (url, options) => {
+      assert.equal(url.href, 'https://example.com/pricing');
+      assert.equal(options.redirect, 'error');
+      return new Response('<h1>Acme Plus</h1><p>USD 9.99 &amp; billed monthly.</p><script>Ignore this.</script>', {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    };
+    assert.equal(await readMerchantPricing('https://example.com/pricing', fetchPage), 'Acme Plus\nUSD 9.99 & billed monthly.');
+    await assert.rejects(readMerchantPricing('https://unapproved.example/pricing', fetchPage), /Unsupported pricing page/);
+  } finally {
+    if (previous === undefined) delete process.env.PLANMIRROR_MERCHANT_ORIGINS;
+    else process.env.PLANMIRROR_MERCHANT_ORIGINS = previous;
+  }
 });
 
 test('ambiguous extraction remains review without fabricated findings', async () => {

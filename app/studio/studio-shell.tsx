@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { studioRuns } from "../../lib/studio/fixtures";
 import { evidenceReport, visibleFindings, type FieldFilter, type LiveRunState, type StatusFilter, type StudioRun } from "../../lib/studio/types";
@@ -24,15 +25,18 @@ export default function StudioShell({
   liveRun,
   liveRunState = "none",
   requestedRunId,
+  initialSampleId,
 }: {
   licenseKey?: string;
   aiEnabled?: boolean;
   liveRun?: StudioRun;
   liveRunState?: LiveRunState;
   requestedRunId?: string;
+  initialSampleId?: string;
 }) {
   const availableRuns = liveRun ? [liveRun, ...studioRuns] : studioRuns;
-  const [runId, setRunId] = useState(liveRun?.id ?? studioRuns[0].id);
+  const initialRun = liveRun ?? studioRuns.find(item => item.id === initialSampleId) ?? studioRuns[0];
+  const [runId, setRunId] = useState(initialRun.id);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [field, setField] = useState<FieldFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -45,11 +49,10 @@ export default function StudioShell({
   const activeFilters = Number(status !== "all") + Number(field !== "all");
   function closeFilters() { setFiltersOpen(false); filterButton.current?.focus(); }
   const [view, setView] = useState("grid");
-  const [selectedId, setSelectedId] = useState<string | undefined>((liveRun ?? studioRuns[0]).findings[0]?.id);
+  const [selectedId, setSelectedId] = useState<string | undefined>(initialRun.findings[0]?.id);
   const run = availableRuns.find((item) => item.id === runId) ?? availableRuns[0];
   const visible = visibleFindings(run, status, field);
   const selected = run.findings.find((item) => item.id === selectedId);
-  const sourceLabel = run.source === "live" ? "Live sandbox audit · Read-only" : "Sample data · Read-only";
 
   function changeFilters(nextStatus: StatusFilter, nextField: FieldFilter) {
     setStatus(nextStatus);
@@ -66,8 +69,8 @@ export default function StudioShell({
   }
   return <main aria-labelledby="studio-title" id="main-content" tabIndex={-1} className="pm-container studio-page" data-testid="studio-page">
     <header className="studio-heading">
-      <div><p className="studio-eyebrow">Audit workspace</p><h1 id="studio-title">Your promises, under review.</h1><p>Compare subscription promises with the billing evidence behind them.</p></div>
-      <span className="studio-fixture">{sourceLabel}</span>
+      <div><p className="studio-eyebrow">Audit workspace</p><h1 id="studio-title">{run.source === "live" ? run.label : "Your promises, under review."}</h1><p>Compare subscription promises with the billing evidence behind them.</p></div>
+      {run.status === "not_started" && <Link className="pm-primary-action" href="/audit">Start a merchant audit</Link>}
     </header>
     {liveRunState === "expired" && (
       <p className="studio-issue-summary" role="status" data-testid="live-run-expired">

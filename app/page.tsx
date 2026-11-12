@@ -63,7 +63,7 @@ export default function Home() {
               ))}
             </ol>
             <div className="pm-merchant-actions pm-workflow-actions">
-              <Link className="pm-primary-action" href="/quillfox#audit">Run an audit</Link>
+              <Link className="pm-primary-action" href="/audit">Search merchants</Link>
               <Link className="pm-secondary-action" href="/studio">Open AG Studio</Link>
             </div>
             <p className="pm-caption pm-workflow-note">Judge path: Quillfox pricing → Run Audit → AG Studio evidence.</p>
