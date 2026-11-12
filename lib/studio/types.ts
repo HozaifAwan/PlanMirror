@@ -1,10 +1,17 @@
 import type { AuditFinding, WebsiteEvidence } from "../audit/types";
 
+export interface PaymentTimelineStep {
+  label: string;
+  detail: string;
+  fields?: string[];
+}
+
 /** Presentation envelope for fixture samples and live audit runs. */
 export interface StudioFinding {
   id: string;
   claimId: string;
   finding: AuditFinding;
+  paymentTimeline?: { advertised: PaymentTimelineStep[]; configured: PaymentTimelineStep[] };
   advertisedDisplay?: string;
   configuredDisplay?: string;
   additionalWebsiteEvidence?: WebsiteEvidence[];

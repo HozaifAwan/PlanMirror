@@ -32,6 +32,19 @@ export default function Evidence({
     {record.priority && <p>Priority: {record.priority.level}. {record.priority.reason}</p>}
     {finding.recommendation && <p>Recommendation: {finding.recommendation}</p>}
     {includeTechnicalIds && <p className="studio-meta">Finding ID: {record.id} · Claim ID: {record.claimId}</p>}
+    {record.paymentTimeline && <section>
+      <Heading>First-payment timeline</Heading>
+      <p>Timing is relative to plan start. Amounts describe the recorded terms.</p>
+      <div className="studio-evidence-columns">
+        {(["advertised", "configured"] as const).map(side => <div key={side}>
+          <p><strong>{side === "advertised" ? "Website offer" : "PayPal schedule"}</strong></p>
+          <ol>{record.paymentTimeline?.[side].map((step, index) => <li key={index}>
+            <strong>{step.label}</strong> · {step.detail}
+            {step.fields && <p className="studio-meta">{step.fields.join(" · ")}</p>}
+          </li>)}</ol>
+        </div>)}
+      </div>
+    </section>}
     <div className="studio-evidence-columns">
       <section><Heading>Advertised evidence</Heading><p className="studio-evidence-value">{record.advertisedDisplay ?? "Advertised value unavailable"}</p>
         {finding.website ? <WebsiteReference evidence={finding.website} /> : <p>Website evidence unavailable.</p>}
