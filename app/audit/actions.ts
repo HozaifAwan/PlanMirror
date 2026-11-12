@@ -1,6 +1,5 @@
 "use server";
 
-import { timingSafeEqual } from "node:crypto";
 import { extractionSourceSchema } from "../../lib/orchestration/extracted-audit";
 import { readMerchantPricing } from "../../lib/audit/merchant-page";
 import { z } from "zod";
@@ -66,25 +65,16 @@ export async function listSandboxPlans(): Promise<ListPlansResult> {
 
 const auditInput = z.union([
   z.strictObject({ planId: planIdSchema, mode: z.enum(["labeled", "extract", "corrected", "cross_page"]) }),
-  z.strictObject({
-    planId: planIdSchema, mode: z.literal("custom"),
-    source: extractionSourceSchema.extend({ sourceText: z.string().max(20_000), sourceUrl: extractionSourceSchema.shape.sourceUrl.max(2048) }),
-    password: z.string().max(256),
-  }),
+  z.strictObject({ mode: z.literal("custom"), sourceUrl: extractionSourceSchema.shape.sourceUrl.max(2048) }),
 ]);
 
 export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<RunAuditResult> {
   try {
     authorizeAction();
     const parsed = auditInput.safeParse(input);
-    if (!parsed.success) return { ok: false, error: "Choose a valid sandbox plan and audit mode.", code: "invalid_input" };
+    if (!parsed.success) return { ok: false, error: "Enter a valid pricing page URL or choose a valid Sandbox plan.", code: "invalid_input" };
     if (parsed.data.mode === "custom") {
       requestLimits.checkRequest();
-      const expected = Buffer.from(process.env.PLANMIRROR_DEMO_PASSWORD ?? "");
-      const provided = Buffer.from(parsed.data.password);
-      if (expected.length < 16 || expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
-        return { ok: false, error: "Enter a valid demo password.", code: "unauthorized" };
-      }
       if (!process.env.OPENAI_API_KEY?.trim()) {
         return { ok: false, error: "AI extraction is unavailable.", code: "ai_unavailable" };
       }
@@ -93,18 +83,25 @@ export async function runPlanAudit(input: z.input<typeof auditInput>): Promise<R
       return { ok: false, error: "AI extraction is unavailable. Run the audit with the published Quillfox claims.", code: "ai_unavailable" };
     }
     return await requestLimits.runProviderWork(async () => {
-      const audit = parsed.data;
-      if (audit.mode === "custom" && !audit.source.sourceText.trim()) {
+      let audit: Parameters<typeof runStudioAudit>[0];
+      if (parsed.data.mode === "custom") {
+        const plan = planIdSchema.safeParse(process.env.PLANMIRROR_MERCHANT_PLAN_ID);
+        if (!plan.success) return { ok: false as const, error: "Website audits are unavailable until a Sandbox test plan is configured.", code: "plan_unavailable" };
+        const { sourceUrl } = parsed.data;
+        let sourceText: string;
         try {
-          audit.source.sourceText = await readMerchantPricing(audit.source.sourceUrl);
+          sourceText = await readMerchantPricing(sourceUrl);
         } catch {
-          return { ok: false as const, error: "Could not read this pricing page. Check the URL or paste the pricing text and try again.", code: "source_unavailable" };
+          return { ok: false as const, error: "Could not read this pricing page. Try a supported pricing URL.", code: "source_unavailable" };
         }
+        audit = { mode: "custom", planId: plan.data, source: { sourceUrl, sourceText } };
+      } else {
+        audit = parsed.data;
       }
       const { run, result } = await runStudioAudit(audit, {
         readPlan: readSandboxPlan,
         extract: extractOffers,
-        countActiveSubscriptions: process.env.PLANMIRROR_SUBSCRIPTION_COUNTS === "true"
+        countActiveSubscriptions: audit.mode !== "custom" && process.env.PLANMIRROR_SUBSCRIPTION_COUNTS === "true"
           ? id => sandboxClient().countActiveSubscriptions(id) : undefined,
       });
       if (!run) {

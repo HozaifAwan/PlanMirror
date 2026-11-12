@@ -12,20 +12,10 @@ export default function MerchantSearch() {
     event.preventDefault();
     if (busy) return;
     const data = new FormData(event.currentTarget);
-    const read = (name: string) => String(data.get(name) ?? "");
     setBusy(true);
     setResult(undefined);
     try {
-      setResult(await runPlanAudit({
-        mode: "custom",
-        planId: read("planId").trim(),
-        password: read("password"),
-        source: {
-          sourceUrl: read("sourceUrl").trim(),
-          sourceText: read("sourceText"),
-          offerLabel: read("offerLabel"),
-        },
-      }));
+      setResult(await runPlanAudit({ mode: "custom", sourceUrl: String(data.get("sourceUrl") ?? "").trim() }));
     } catch {
       setResult({ ok: false, code: "request_failed", error: "The audit request was interrupted. Try again." });
     } finally {
@@ -36,12 +26,7 @@ export default function MerchantSearch() {
   return (
     <>
       <form className="pm-audit-form" onSubmit={submit} aria-busy={busy}>
-        <label>Pricing page URL<input name="sourceUrl" type="url" required /></label>
-        <label>Offer name as shown on the page<input name="offerLabel" maxLength={200} required /></label>
-        <label>Pricing text (optional)<textarea name="sourceText" maxLength={20000} rows={6} aria-describedby="pricing-text-help" /></label>
-        <p id="pricing-text-help" className="pm-caption">Leave blank to read a supported pricing page. If the page can’t be read, paste the visible offer here.</p>
-        <label>PayPal Sandbox plan ID<input name="planId" placeholder="P-…" required /></label>
-        <label>Demo password<input name="password" type="password" maxLength={256} required /></label>
+        <label>Website pricing URL<input name="sourceUrl" type="url" placeholder="https://example.com/pricing" maxLength={2048} required disabled={busy} /></label>
         <button className="pm-primary-action" type="submit" disabled={busy}>{busy ? "Running audit…" : "Run audit"}</button>
       </form>
       {result?.ok === false && <p role="alert">{result.error}</p>}
