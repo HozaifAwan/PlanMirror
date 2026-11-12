@@ -16,11 +16,13 @@ export default function Evidence({
   panel = false,
   source = "fixture",
   includeTechnicalIds = false,
+  compact = false,
 }: {
   record: StudioFinding;
   panel?: boolean;
   source?: StudioRun["source"];
   includeTechnicalIds?: boolean;
+  compact?: boolean;
 }) {
   const { finding } = record;
   const Heading = panel ? "h3" : "h4";
@@ -32,15 +34,17 @@ export default function Evidence({
     {record.priority && <p>Priority: {record.priority.level}. {record.priority.reason}</p>}
     {finding.recommendation && <p>Recommendation: {finding.recommendation}</p>}
     {includeTechnicalIds && <p className="studio-meta">Finding ID: {record.id} · Claim ID: {record.claimId}</p>}
-    {record.paymentTimeline && <section>
+    {record.paymentTimeline && <section className={compact ? "studio-payment-timeline" : undefined}>
       <Heading>First-payment timeline</Heading>
       <p>Timing is relative to plan start. Amounts describe the recorded terms.</p>
       <div className="studio-evidence-columns">
-        {(["advertised", "configured"] as const).map(side => <div key={side}>
+        {(["advertised", "configured"] as const).map(side => <div key={side} data-side={compact ? side : undefined}>
           <p><strong>{side === "advertised" ? "Website offer" : "PayPal schedule"}</strong></p>
           <ol>{record.paymentTimeline?.[side].map((step, index) => <li key={index}>
             <strong>{step.label}</strong> · {step.detail}
-            {step.fields && <p className="studio-meta">{step.fields.join(" · ")}</p>}
+            {step.fields && (compact
+              ? <details className="studio-field-details"><summary>PayPal fields</summary><p>{step.fields.join(" · ")}</p></details>
+              : <p className="studio-meta">{step.fields.join(" · ")}</p>)}
           </li>)}</ol>
         </div>)}
       </div>
