@@ -6,13 +6,13 @@ import { useId, useState, type ReactNode } from "react";
 
 export const navigationItems: ReadonlyArray<{ href: string; label: string; match?: "exact" | "prefix" }> = [
   { href: "/", label: "Overview", match: "exact" },
-  { href: "/quillfox", label: "Quillfox", match: "prefix" },
+  { href: "/audit", label: "Merchant Search", match: "prefix" },
   { href: "/studio", label: "AG Studio", match: "exact" },
 ];
 
 function NavIcon({ href }: { href: string }) {
   if (href === "/") return <><path d="m3 10 9-7 9 7" /><path d="M5 9v12h5v-7h4v7h5V9" /></>;
-  if (href === "/quillfox") return <><path d="M4 7h16v12H4z" /><path d="M8 7V5a4 4 0 0 1 8 0v2" /><path d="M9 12h6" /></>;
+  if (href === "/audit") return <><path d="M4 7h16v12H4z" /><path d="M8 7V5a4 4 0 0 1 8 0v2" /><path d="M9 12h6" /></>;
   return <><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 9v12m4-4 2-3 3 2" /></>;
 }
 
