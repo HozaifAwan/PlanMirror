@@ -45,7 +45,7 @@ test('AI extraction uses the existing validated source-mode adapter', async () =
 test('custom merchant pricing reaches Studio with the original evidence and selected plan', async () => {
   const source = {
     sourceUrl: 'https://example.com/acme/pricing',
-    sourceText: 'Acme Plus offers a 30-day free trial.',
+    sourceText: 'Acme Plus offers a 30-day free trial. Acme Basic costs USD 9.99 per month.',
     offerLabel: 'Acme Plus',
   };
   const { run } = await runStudioAudit({ planId: plan.id, mode: 'custom', source }, {
@@ -58,13 +58,19 @@ test('custom merchant pricing reaches Studio with the original evidence and sele
       return { status: 'ok', claims: [{
         ...quillfoxClaims()[0].claim,
         offerLabel: 'Acme Plus',
-        evidence: { url: source.sourceUrl, quote: source.sourceText },
+        evidence: { url: source.sourceUrl, quote: 'Acme Plus offers a 30-day free trial.' },
+      }, {
+        ...quillfoxClaims()[1].claim,
+        offerLabel: 'Acme Basic',
+        evidence: { url: source.sourceUrl, quote: 'Acme Basic costs USD 9.99 per month.' },
       }] };
     },
   });
   assert.equal(run.label, 'Acme Plus');
   assert.equal(run.findings[0].finding.status, 'mismatch');
-  assert.equal(run.findings[0].finding.website.quote, source.sourceText);
+  assert.equal(run.findings.length, 1);
+  assert.match(run.description, /Website offer vs\. sandbox test configuration/);
+  assert.equal(run.findings[0].finding.website.quote, 'Acme Plus offers a 30-day free trial.');
   assert.equal(run.findings[0].finding.website.url, source.sourceUrl);
   assert.equal(run.findings[0].finding.paypal.planId, plan.id);
 });

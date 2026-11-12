@@ -40,7 +40,7 @@ export async function runStudioAudit(input: { planId: string; mode: "labeled" | 
   if (result.status === "failed" || !plan) return { result };
   const merchantLabel = input.mode === "custom" ? claims[0]?.claim.offerLabel ?? input.source.offerLabel ?? new URL(input.source.sourceUrl).hostname : undefined;
   const description = input.mode === "custom"
-    ? "Compared " + merchantLabel + " with the configured PayPal Sandbox test plan."
+    ? `Website offer vs. sandbox test configuration. Compared ${merchantLabel} with our PayPal sandbox test plan ${plan.name}. The results describe this test comparison.`
     : input.mode === "cross_page"
     ? "Quillfox pricing and its older FAQ quote different monthly rates. Each source is compared separately against the same PayPal plan."
     : `Live sandbox audit of ${plan.name} using ${input.mode === "corrected" ? "the corrected Quillfox offer preview" : input.mode === "extract" ? "AI-extracted Quillfox pricing text" : "labeled Quillfox claims"}.`;

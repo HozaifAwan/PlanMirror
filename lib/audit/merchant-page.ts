@@ -4,6 +4,8 @@ import { get } from "node:https";
 import { BlockList, isIP } from "node:net";
 import { Readable } from "node:stream";
 
+export class MerchantPageError extends Error {}
+
 const reserved = new BlockList();
 for (const [address, prefix] of [
   ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8],
@@ -16,7 +18,7 @@ async function fetchPublicPage(url: URL, init: RequestInit): Promise<Response> {
   const resolver = new Resolver({ timeout: 1500, tries: 1 });
   const addresses = await resolver.resolve4(url.hostname);
   if (!addresses.length || addresses.some(address => reserved.check(address))) {
-    throw new Error("Pricing page must resolve to a public address.");
+    throw new MerchantPageError("Use a pricing page on a publicly reachable host.");
   }
   // Connect to the checked address and preserve the original hostname for TLS.
   return new Promise((resolve, reject) => {
@@ -28,7 +30,9 @@ async function fetchPublicPage(url: URL, init: RequestInit): Promise<Response> {
       const status = response.statusCode ?? 502;
       if (status < 200 || status >= 300 || status === 204 || status === 205) {
         response.destroy();
-        reject(new Error("Pricing page unavailable."));
+        reject(new MerchantPageError(status >= 300 && status < 400
+          ? "This page redirects. Paste the final pricing URL from your browser."
+          : "The pricing site did not return a readable page."));
         return;
       }
       resolve(new Response(Readable.toWeb(response) as ReadableStream<Uint8Array>, {
@@ -55,7 +59,7 @@ export async function readMerchantPricing(sourceUrl: string, fetchPage = fetchPu
   const url = new URL(sourceUrl);
   if (url.protocol !== "https:" || url.username || url.password || url.port ||
     !url.hostname.includes(".") || isIP(url.hostname)) {
-    throw new Error("Unsupported pricing page.");
+    throw new MerchantPageError("Unsupported pricing page. Use a direct public HTTPS URL.");
   }
   const response = await fetchPage(url, {
     cache: "no-store", redirect: "error", signal: AbortSignal.timeout(7000),
@@ -64,7 +68,7 @@ export async function readMerchantPricing(sourceUrl: string, fetchPage = fetchPu
   const mime = response.headers.get("content-type")?.split(";")[0].trim();
   if (!response.ok || !response.body || (mime !== "text/html" && mime !== "text/plain")) {
     await response.body?.cancel();
-    throw new Error("Pricing page unavailable.");
+    throw new MerchantPageError("The URL did not return readable HTML or plain text.");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -75,7 +79,7 @@ export async function readMerchantPricing(sourceUrl: string, fetchPage = fetchPu
       const { done, value } = await reader.read();
       if (done) break;
       bytes += value.byteLength;
-      if (bytes > 1_000_000) throw new Error("Pricing page is too large.");
+      if (bytes > 1_000_000) throw new MerchantPageError("The pricing page is too large. Try a shorter pricing page.");
       body += decoder.decode(value, { stream: true });
     }
     body += decoder.decode();
@@ -84,6 +88,6 @@ export async function readMerchantPricing(sourceUrl: string, fetchPage = fetchPu
   }
   const sourceText = (mime === "text/html" ? visibleText(parse(body)) : body)
     .replace(/[^\S\n]+/g, " ").replace(/\n\s*\n/g, "\n").trim();
-  if (!sourceText || sourceText.length > 20_000) throw new Error("Pricing text is empty or too long.");
+  if (!sourceText || sourceText.length > 20_000) throw new MerchantPageError("The page has no readable pricing text or exceeds the text limit.");
   return sourceText;
 }

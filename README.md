@@ -156,6 +156,12 @@ The endpoint uses PayPal's sandbox OAuth and plan details APIs. The server share
 3. Back on Quillfox, select **Re-audit corrected offer**. The preview promises seven days and reads the same sandbox plan again. Open the new result in AG Studio to inspect the updated verdict. Both audit runs remain separately inspectable.
 4. With OpenAI configured, enable **Extract Quillfox advertised terms with AI** before running the audit. The server checks the extracted evidence against the offer copy. Without OpenAI, the audit compares the published Quillfox claims with the live sandbox plan.
 
+### Compare another website with a sandbox test plan
+
+Open **Merchant Search** at `/audit`, paste a direct public HTTPS pricing URL, and select **Extract offers**. Choose an offer to inspect its terms and source quotes. To continue, choose one of the connected PayPal sandbox test plans and select **Compare**. AG Studio labels the result **Website offer vs. sandbox test configuration**.
+
+Ayaan can provision reusable test plans in the existing sandbox account. Example configurations are USD 19 monthly with no trial, seven free days then USD 19 monthly, USD 99 annually, and USD 24 monthly for a price discrepancy. Configure them independently of the extracted offers. Merchant Search reads the plans already in that account. Extraction previews last up to 15 minutes on the same server instance. Pages that require login or JavaScript, redirect, or exceed the reader's limits may need a different URL.
+
 ### Host the judge demo
 
 Deploy as a Node.js application using `npm ci`, `npm run build`, and `npm start`. Use one long-running instance for this prototype because audit runs and agent limits are stored in process memory. Restarting the instance clears previous run links.
