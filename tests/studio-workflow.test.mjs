@@ -69,10 +69,7 @@ test('custom merchant pricing reaches Studio with the original evidence and sele
   assert.equal(run.findings[0].finding.paypal.planId, plan.id);
 });
 
-test('merchant page reader extracts bounded HTML from the configured origin only', async () => {
-  const previous = process.env.PLANMIRROR_MERCHANT_ORIGINS;
-  process.env.PLANMIRROR_MERCHANT_ORIGINS = 'https://example.com';
-  try {
+test('merchant page reader extracts bounded HTML from public HTTPS URLs', async () => {
     const fetchPage = async (url, options) => {
       assert.equal(url.href, 'https://example.com/pricing');
       assert.equal(options.redirect, 'error');
@@ -81,11 +78,7 @@ test('merchant page reader extracts bounded HTML from the configured origin only
       });
     };
     assert.equal(await readMerchantPricing('https://example.com/pricing', fetchPage), 'Acme Plus\nUSD 9.99 & billed monthly.');
-    await assert.rejects(readMerchantPricing('https://unapproved.example/pricing', fetchPage), /Unsupported pricing page/);
-  } finally {
-    if (previous === undefined) delete process.env.PLANMIRROR_MERCHANT_ORIGINS;
-    else process.env.PLANMIRROR_MERCHANT_ORIGINS = previous;
-  }
+    await assert.rejects(readMerchantPricing('https://127.0.0.1/pricing', fetchPage), /Unsupported pricing page/);
 });
 
 test('ambiguous extraction remains review without fabricated findings', async () => {
