@@ -1,4 +1,4 @@
-/** Mock PlanMirror Auditor replies until the AG Studio NL agent is wired. */
+/** Scripted page-guide replies when AI chat is unavailable. */
 
 export type CheckBotContext = {
   pathname: string;
@@ -9,8 +9,6 @@ export type CheckBotContext = {
 function pageLabel(pathname: string) {
   if (pathname.startsWith("/studio")) return "AG Studio";
   if (pathname.startsWith("/audit")) return "the audit workspace";
-  if (pathname.startsWith("/quillfox/faq")) return "the Quillfox FAQ";
-  if (pathname.startsWith("/quillfox")) return "Quillfox pricing and audit";
   if (pathname === "/") return "the overview";
   return "this page";
 }
@@ -28,7 +26,7 @@ export function mockCheckBotReply({ pathname, message, pageMarkdown }: CheckBotC
   const page = pageLabel(pathname);
   const text = pageMarkdown.replace(/\s+/g, " ").trim();
   const ask = message.toLowerCase();
-  const preview = "I'm a preview of the PlanMirror Auditor. When the live AG Studio agent is connected, I'll explain findings from the same evidence — without inventing prices or plan values.";
+  const preview = "I'm the scripted PlanMirror page guide. Open Merchant Search, paste your pricing URL and select the corresponding sandbox plan to run an audit. I can quote this page but cannot run audits or retrieve billing data.";
 
   if (!text) {
     return `I'm on ${page}, but I couldn't read any page content just now. ${preview}`;
@@ -72,11 +70,11 @@ export function mockCheckBotReply({ pathname, message, pageMarkdown }: CheckBotC
       : `I'm on ${page}. This snapshot doesn't show findings yet — try running an audit, then ask again. ${preview}`;
   }
 
-  if (/quillfox|who are you|what can you|help/.test(ask)) {
-    return `I'm the PlanMirror check bot on ${page}. I quietly read the page (same agent snapshot as Markdown view) and answer from that context. Quillfox is the fictional demo merchant. ${preview}`;
+  if (/who are you|what can you|help/.test(ask)) {
+    return `I'm the PlanMirror check bot on ${page}. I quietly read the page (same agent snapshot as Markdown view) and answer from that context. ${preview}`;
   }
 
-  const headline = firstMatch(text, [/^#\s+(.+)$/m, /Your promises[^.!]*/, /Quillfox Pro/, /Compare Quillfox/]);
+  const headline = firstMatch(text, [/^#\s+(.+)$/m, /Your promises[^.!]*/]);
   return headline
     ? `I'm looking at ${page}. Top signal from the page: “${headline}”. Ask about trials, prices, mismatches, or findings. ${preview}`
     : `I'm on ${page} with a page snapshot loaded. Ask about trials, prices, mismatches, or findings. ${preview}`;

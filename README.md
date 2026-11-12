@@ -4,6 +4,14 @@
 
 **AI-Powered Subscription Billing Integrity Auditor**
 
+**Shipping status:** Core application checks pass locally. Start with the [release checklist and submission draft](docs/release-readiness.md) for the remaining launch work and recording script.
+
+### Merchant URL audits
+
+Choose **Run an audit** on the overview to open `/audit`. Enter a public HTTPS pricing page and the corresponding plan from the configured PayPal sandbox merchant. AI extraction identifies the offer automatically; optionally name a specific offer when a page has multiple tiers. Without an explicit selection, multiple extracted offers require review. The server retrieves readable page text, validates extracted terms and exact quotes, reads the selected PayPal plan, runs deterministic comparisons, and stores the resulting evidence for the Studio handoff. The merchant must confirm the website/offer/plan pairing; a URL cannot establish ownership or select a PayPal plan automatically.
+
+This path requires server-side PayPal credentials, `PLANMIRROR_SANDBOX_READ_TOKEN`, and `OPENAI_API_KEY`. JavaScript-only pricing, blocked pages, redirects, and unsupported or ambiguous billing terms cannot be assumed to produce a conclusive audit. Studio opens with no data until a run is supplied and no longer includes demo scenarios in the merchant workflow. Use the result's **Open in AG Studio** link; runs expire after 30 minutes and are lost on server restart.
+
 ### Interactive audit workspace
 
 Studio opens with a verdict donut, billing-field × verdict pivot, linked findings table, and a full-width **Promise vs configuration** evidence panel below the dashboard. The registered custom evidence widget remains optional in the catalogue. Inspect follows the same selected finding throughout the workspace. Hidden selections are labeled rather than silently replaced. Native chart selections add canvas-only scope; accessible records follow the status/field controls. Markdown and JSON export always retain the complete recorded run. Counts are findings, never estimated losses or risk scores.
@@ -30,7 +38,7 @@ A merchant-side auditing application for comparing advertised subscription promi
 
 > **Start on `main`.** The older prototype is preserved on [`backup-mvp`](https://github.com/HozaifAwan/hackathon-project/tree/backup-mvp). Use the current Quillfox walkthrough below.
 
-> **Backup prototype: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The sandbox audit can extract terms from the Quillfox pricing copy with OpenAI. General webpage extraction and the AI Auditor agent are planned.
+> **Backup prototype: Quillfox demo available.** Compare the published Quillfox offer with a labeled sample or an authorized PayPal sandbox plan. Inspect the results in AG Studio. The sandbox audit can extract terms from the Quillfox pricing copy with OpenAI. The Auditor agent is implemented. Custom HTTPS pricing-page extraction is available with a configured sandbox test plan; arbitrary merchant-to-plan mapping remains unsupported.
 
 ## Project overview
 
@@ -44,7 +52,7 @@ PlanMirror is an auditing aid. It does not guarantee FTC compliance, certify leg
 
 Marketing copy and payment settings are often maintained separately. A promotion changes, an FAQ becomes stale, or a billing plan is edited without updating the website. A correct-looking checkout page alone cannot establish that the backend plan matches the offer.
 
-The planned workflow:
+The audit workflow:
 
 1. Retrieve an allowlisted merchant pricing page and relevant FAQ/terms pages.
 2. Extract visible text with source URLs and evidence snippets.
@@ -55,9 +63,9 @@ The planned workflow:
 
 AI interprets wording; deterministic code verifies financial comparisons. Missing evidence or ambiguous plan mapping must produce **needs review**, not an invented match.
 
-## Tech stack — foundation and planned integrations
+## Tech stack
 
-| Technology | Planned responsibility |
+| Technology | Responsibility |
 | --- | --- |
 | Next.js (App Router) | One application with server-side routes and UI |
 | React + TypeScript | Typed components and application logic |
@@ -67,13 +75,13 @@ AI interprets wording; deterministic code verifies financial comparisons. Missin
 | OpenAI Responses API | Structured extraction and grounded explanations |
 | Zod | Validate extracted terms and application boundaries |
 | Decimal.js | Exact decimal arithmetic for financial comparisons |
-| Native Fetch + Cheerio | Controlled HTML retrieval and text extraction |
+| Node HTTPS + parse5 | Controlled HTML retrieval and text extraction |
 | Playwright | Optional fallback only when JavaScript rendering is required |
 | Vercel | Planned hosting; no deployment yet |
 
 There is **no separate Express, FastAPI, or Python backend**. PayPal and OpenAI calls belong in server-side Next.js code. Installed versions are recorded in the npm lockfile.
 
-## System architecture — planned
+## System architecture
 
 ```mermaid
 flowchart TD
@@ -111,7 +119,7 @@ For automatic re-audits, register `/api/paypal/webhooks` on the sandbox app for 
 
 ## Five demo scenarios — Quillfox
 
-Quillfox is a **fictional merchant**. These are planned demo fixtures and acceptance cases, not completed audit results. All amounts below are USD.
+Quillfox is a **fictional merchant**. These are fixture scenarios and acceptance cases. Live sandbox results are recorded separately below. All amounts below are USD.
 
 | Scenario | Advertised terms | PayPal / other evidence | Expected outcome |
 | --- | --- | --- | --- |
@@ -123,7 +131,7 @@ Quillfox is a **fictional merchant**. These are planned demo fixtures and accept
 
 Annual equivalence does **not** mean monthly collection equals annual collection. Preserve upfront payment, renewal cadence, taxes, setup fees, trial charges, discounts, and quantity context. Compare like with like; unsupported cases require review.
 
-## PayPal integration — planned
+## PayPal integration
 
 - `GET /v1/billing/plans`: list the authorized merchant’s plans, following pagination.
 - `GET /v1/billing/plans/{id}`: retrieve authoritative details for each selected plan.
@@ -232,7 +240,7 @@ This is a frontend requirement: preserve the shared `AgentView` wrapper in `app/
 
 The toggle has accessible name `Markdown view`, exposes `aria-pressed`, and uses `data-testid="agent-view-toggle"`. The output uses `data-testid="agent-markdown"`. Preserve keyboard activation, visible focus, bottom-right document placement at narrow widths, and a working return toggle. Never include credentials or filled sensitive inputs in Markdown or use it to bypass authorization.
 
-The current branch has a landing page, a fixture-driven AG Studio page, shared semantic navigation and route loading/error/not-found boundaries. Live audit forms, the custom Mirror widget and the Auditor agent remain future work here; this rule governs their implementation rather than claiming they already meet it. These hooks supplement accessible HTML and do not require a particular agent vendor, model, browser extension or custom agent API.
+The current branch includes live audit forms, fixture and live Studio runs, the optional custom evidence widget, and the Auditor agent, alongside shared navigation and route loading/error/not-found boundaries. Browser verification remains necessary for release. These hooks supplement accessible HTML and do not require a particular agent vendor, model, browser extension or custom agent API.
 
 ## Team collaboration
 
@@ -282,7 +290,7 @@ See [Team handoff](#team-handoff) for named owners and starting files.
 
 ## Future enhancements — stretch goals
 
-- [ ] PayPal webhook-triggered audits.
+- [ ] Hosted verification of the implemented PayPal webhook-triggered audits.
 - [ ] Subscriber impact analysis using effective subscription terms.
 - [ ] Human-approved sandbox price corrections, with explicit confirmation and recorded changes.
 - [ ] Audit history and version comparisons.
@@ -317,7 +325,7 @@ Submission checklist, based on the [official rules](https://paypalaihackathon.de
 - [ ] Prepare an AI-tools statement identifying tools/models, their roles in the app and development, and human verification; confirm the current submission form’s disclosure fields.
 - [ ] Recheck the submission form, official rules, and any sponsor-specific requirements before submission.
 
-The AI-tools statement is a team documentation deliverable; do not treat an unverified disclosure format as a quoted rule. No video, deployment, completed audit results, or submission is claimed here.
+The AI-tools statement is a team documentation deliverable; do not treat an unverified disclosure format as a quoted rule. Live local audit results are documented above. A public video, hosted deployment, and completed submission are not claimed here.
 
 ## Official documentation
 
@@ -331,8 +339,8 @@ The AI-tools statement is a team documentation deliverable; do not treat an unve
 
 - **Portable audit evidence.** Use **Download evidence report** to save a JSON record for a teammate investigating an offer. It includes the Quillfox source link and quote, whether OpenAI extracted the terms, the sample or sandbox source label, the PayPal retrieval timestamp for sandbox audits, and every finding with its plan ID and PayPal field. The download includes all findings even when the dashboard is filtered. API keys and audit tokens are excluded.
 - **Polished demo dashboard.** The audit and AG Studio share a blue palette, and the audit opens with the evidence grid visible. The status controls let judges isolate discrepancies before downloading the complete record.
-- **Two-minute recording sequence.** Spend 20 seconds showing Quillfox’s public-facing promise, 45 seconds running an authorized sandbox audit with AI extraction and showing the verified quote, 35 seconds inspecting a discrepancy and downloading its evidence, and 20 seconds running the labeled corrected sample. The corrected sample demonstrates the expected outcome using fixture data. Record the sandbox run with the token field masked and keep the final video under three minutes. [Devpost official rules](https://paypalaihackathon.devpost.com/rules)
-- **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid is implemented, while a custom widget and Auditor agent remain open. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
+- **Two-minute recording sequence.** Spend 20 seconds showing Quillfox’s public-facing promise, 45 seconds running an authorized sandbox audit with AI extraction and showing the verified quote, 35 seconds inspecting a discrepancy and downloading its evidence, and 20 seconds re-auditing the corrected offer against the same sandbox plan. Verify that the result is labeled live sandbox before recording. Record the sandbox run with the token field masked and keep the final video under three minutes. [Devpost official rules](https://paypalaihackathon.devpost.com/rules)
+- **Submission checks.** Before recording, verify one actual PayPal sandbox and OpenAI run from a clean setup. The public repository and open-source license are separate submission requirements and still need team resolution. The AG Grid prize guidance emphasizes custom widgets, theming, layout, and Studio Agent Framework integration. The themed evidence grid, optional custom evidence widget, workspace layout tools, and custom Auditor agent are implemented; verify them in the recorded walkthrough. [AG Grid sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid)
 
 
 ## Audit orchestration integration

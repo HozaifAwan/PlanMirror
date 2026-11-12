@@ -144,6 +144,19 @@ const studioCss = readFileSync(new URL('../app/studio/studio.css', import.meta.u
 // JSDOM does not process Tailwind imports/theme directives; retain all real selectors.
 const globalCss = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8').replace(/@import[^;]+;/g, '').replace(/@theme\s*\{[^}]*\}/g, '');
 
+test('Studio defaults to no audit and live handoffs do not include merchant fixtures', () => {
+  const StudioShell = componentModule('app/studio/studio-shell.tsx').default;
+  const empty = renderToStaticMarkup(React.createElement(StudioShell));
+  assert.match(empty, /No audit loaded/);
+  assert.match(empty, /Start a merchant audit/);
+  assert.ok(!/quillfox/i.test(empty));
+  const live = { ...structuredClone(studioRuns[0]), id: 'merchant-run', source: 'live', label: 'Acme Plus', description: 'Acme audit', findings: [], issues: [] };
+  const html = renderToStaticMarkup(React.createElement(StudioShell, { liveRun: live, liveRunState: 'loaded' }));
+  assert.match(html, /Acme Plus/);
+  assert.ok(!/quillfox/i.test(html));
+  assert.ok(!html.includes(studioRuns[0].id));
+});
+
 function studioSnapshot(run, status = 'all', field = 'all') {
   return snapshot(`<style>${studioCss}</style><main class="studio-page">${renderToStaticMarkup(React.createElement(StudioMarkdown, { run, availableRuns: studioRuns, status, field, view: "accessible", selectedId: run.findings[0]?.id }))}</main>`);
 }
@@ -195,7 +208,7 @@ test('actual footer toggle captures production Studio evidence and returns to th
     const StudioShell = componentModule('app/studio/studio-shell.tsx').default;
     const AppShell = componentModule('app/components/app-shell.tsx').default;
     root = createRoot(dom.window.document.getElementById('root'));
-    await React.act(async () => root.render(React.createElement(AgentView, { footer: 'PlanMirror footer' }, React.createElement(AppShell, { brand: React.createElement('a', { href: '/' }, 'PlanMirror') }, React.createElement(StudioShell)))));
+    await React.act(async () => root.render(React.createElement(AgentView, { footer: 'PlanMirror footer' }, React.createElement(AppShell, { brand: React.createElement('a', { href: '/' }, 'PlanMirror') }, React.createElement(StudioShell, { sampleRuns: studioRuns })))));
     const button = dom.window.document.querySelector('[data-testid="agent-view-toggle"]');
     assert.ok(button.closest('footer'));
     assert.equal(dom.window.document.querySelector('[data-testid="navigation-sidebar"]').dataset.expanded, "false");
@@ -217,7 +230,7 @@ test('actual footer toggle captures production Studio evidence and returns to th
     }
     assert.ok(!markdown.includes('Virtual grid placeholder'));
     assert.ok(markdown.includes('[Button: Audit workspace; pressed: true]'));
-    assert.ok(markdown.includes('Audit scenario'));
+    assert.ok(markdown.includes('Audit run'));
     assert.ok(markdown.indexOf('All finding evidence') < markdown.indexOf('[Button: All findings'));
     assert.equal(button.getAttribute('aria-pressed'), 'true');
     await React.act(async () => button.click());
@@ -661,6 +674,9 @@ test('audit actions enforce the existing gate and budgets, paginate plans and re
     assert.equal(listed.defaultPlanId, plan.id);
     assert.deepEqual(pages, [1, 2]);
     assert.equal((await actions.runPlanAudit(null)).code, 'invalid_input');
+    // A URL alone must never silently select a server-configured billing plan.
+    assert.equal((await actions.runPlanAudit({ mode: 'custom', sourceUrl: 'https://example.com/pricing' })).code, 'invalid_input');
+    assert.equal(reads, 0);
     const audited = await actions.runPlanAudit({ planId: plan.id, mode: 'labeled' });
     assert.equal(audited.ok, true);
     assert.equal(reads, 1);
